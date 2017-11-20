@@ -6,42 +6,23 @@ import (
 )
 
 type CHIP8 struct {
-	// CHIP-8 is capable of accessing 4KB (4,096 bytes) of RAM.
-	// Because the first 512 bytes are reserved for the interpreter, CHIP-8 programs will start at address 0x200 (512).
-	RAM [4096]byte
+	RAM   [4096]byte   // CHIP-8 is capable of accessing 4KB (4,096 bytes) of RAM.
+	GFX   [64][32]byte // CHIP-8 screen is 64x32 pixels.
+	Stack [16]uint     // 16 16-bit stack used for saving addresses before subroutines.
 
-	// CHIP-8 screen is 64x32 pixels.
-	GFX [64][32]byte
+	V [16]byte // 16 8-bit Registers: V0 - VE are general registers and VF is a flag register.
 
-	// 16 16-bit stack used for saving addresses before subroutines.
-	Stack [16]uint
+	PC uint // 16-bit Program counter. All programs start at 0x200.
+	SP uint // 8-bit Stack pointer
+	I  uint // Address register
 
-	// 16 8-bit Registers: V0 - VE are general registers and VF is a flag register.
-	V [16]byte
+	DT int64 // Delay timer
+	ST int64 // Sound timer
 
-	// 16-bit Program counter. All programs start at 0x200.
-	PC uint
-
-	// 8-bit Stack pointer
-	SP uint
-
-	// Address register
-	I uint
-
-	// Delay timer
-	DT int64
-
-	// Sound timer
-	ST int64
-
-	// Keys
 	Key [16]uint
 
-	// ROM Size: length of CHIP-8 program byte array
-	RS int
-
-	// Draw Flag
-	DF uint
+	RS int  // ROM Size: length of CHIP-8 program byte array
+	DF uint // Draw Flag
 }
 
 func (chip8 *CHIP8) LoadROM(filename *string) error {
@@ -69,17 +50,18 @@ func (chip8 *CHIP8) printRAM() {
 	}
 }
 
+// Each opcode is 2 bytes, but RAM is a byte array, so it must be accessed twice to create the opcode.
+//
+// RAM[PC] = 0x01 (1 byte)
+// RAM[PC + 1] = 0xFE (1 byte)
+// opcode = RAM[PC] + RAM[PC + 1] = 0x01FE
 func (chip8 *CHIP8) getOpCode(PC uint) uint16 {
-	// Each opcode is 2 bytes, but RAM is a byte array, so it must be accessed twice to create the opcode.
-	//
-	// RAM[PC] = 0x01 (1 byte)
-	// RAM[PC + 1] = 0xFE (1 byte)
-	// opcode = RAM[PC] + RAM[PC + 1] = 0x01FE
 	opCode1 := uint16(chip8.RAM[PC])
 	opCode2 := uint16(chip8.RAM[PC+1])
 	opCode := opCode1<<8 | opCode2
 
 	fmt.Printf("\n1st OpCode: %X\n2nd OpCode: %X\nOpCode: %X\n", opCode1, opCode2, opCode)
+
 	return opCode
 }
 
@@ -92,10 +74,11 @@ func (chip8 *CHIP8) Cycle() {
 	chip8.execute(opCode)
 }
 
-func (chip8 *CHIP8) execute(opCode uint16) error{
-	nnn := opCode & 0x0FFF
+func (chip8 *CHIP8) execute(opCode uint16) error {
 	vx := opCode & 0x0F00
 	vy := opCode & 0x00F0
+
+	nnn := opCode & 0x0FFF
 	kk := opCode & 0x00FF
 	n := opCode & 0x000F
 
@@ -188,7 +171,8 @@ func (chip8 *CHIP8) execute(opCode uint16) error{
 		chip8.rand(vx)
 
 	} else if (opCode & 0xF000) == 0xD000 {
-		fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
+		fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), " +
+					"set Vf = collusion.")
 		chip8.draw(vx, vy, n)
 
 	} else if (opCode & 0xF0FF) == 0xE09E {
