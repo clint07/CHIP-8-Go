@@ -8,8 +8,7 @@ func main() {
 	flag.Parse()
 
 	// Initialize CHIP8
-	chip8 := &CHIP8{PC: 0x200}
-
+	chip8 := CHIP8{PC: 0x200}
 
 	// Load ROM
 	if err := chip8.LoadROM(filename); err != nil {
@@ -21,11 +20,12 @@ func main() {
 
 	// Load game through arguments
 
-	//for {
+	for i := 0; i < 5; i++{
 		// Emulate a cycle
+		chip8.Cycle()
 		// Check draw flag
 			// Draw
 
 		// Record key press
-	//}
+	}
 }
