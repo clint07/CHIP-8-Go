@@ -1,8 +1,8 @@
 package main
 
 import (
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
 )
 
 type CHIP8 struct {
@@ -11,7 +11,7 @@ type CHIP8 struct {
 	RAM [4096]byte
 
 	// CHIP-8 screen is 64x32 pixels.
-	GFX [64*32]byte
+	GFX [64 * 32]byte
 
 	// 16 16-bit stack used for saving addresses before subroutines.
 	Stack [16]uint
@@ -36,28 +36,32 @@ type CHIP8 struct {
 
 	// Keys
 	Key [16]uint
+
+	// ROM Size: length of CHIP-8 program byte array
+	RS int
 }
 
-func (chip8 *CHIP8) LoadROM(filename string) error {
-	rom, err := ioutil.ReadFile(filename)
-
-	for i := 0; i < 4096; i++ {
-		fmt.Printf("%d: %x", i, rom[i])
-	}
-
+func (chip8 *CHIP8) LoadROM(filename *string) error {
+	// Read file into byte array
+	rom, err := ioutil.ReadFile(*filename)
 	if err != nil {
 		return err
 	}
 
+	// Save ROM size
+	chip8.RS = len(rom)
+
+	// Copy program byte array into RAM
 	for i := uint(0); i < uint(len(rom)); i++ {
-		chip8.RAM[i + chip8.PC] = rom[i]
+		chip8.RAM[i+chip8.PC] = rom[i]
 	}
 
 	return nil
 }
 
+// Helpful for debugging
 func (chip8 *CHIP8) printRAM() {
-	for i := 0; i < 4096; i++ {
-		fmt.Printf("%d: %x", i, chip8.RAM[i])
+	for i := 0; i < chip8.RS+512; i++ {
+		fmt.Printf("%d: %x\n", i, chip8.RAM[i])
 	}
 }

@@ -1,14 +1,23 @@
 package main
 
-//import "flag"
+import "flag"
 
 func main() {
+	// Parse command line arguments
+	filename := flag.String("file", "", "ROM filename")
+	flag.Parse()
+
 	// Initialize CHIP8
-	println("BLAHHHHH")
-	//filename := flag.String("filename", "", "ROM filename")
-	//println(*filename)
-	//chip8 := &CHIP8{PC: 0x200}
-	//chip8.printRAM()
+	chip8 := &CHIP8{PC: 0x200}
+
+
+	// Load ROM
+	if err := chip8.LoadROM(filename); err != nil {
+		panic(err)
+	}
+
+	// Print ROM for sanity sake
+	chip8.printRAM()
 
 	// Load game through arguments
 
