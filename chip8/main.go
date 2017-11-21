@@ -7,25 +7,15 @@ func main() {
 	filename := flag.String("file", "", "ROM filename")
 	flag.Parse()
 
-	// Initialize Cpu
-	chip8 := Cpu{}
+	// Initialize VM
+	chip8 := Chip8{}
+	chip8.Init()
 
 	// Load ROM
-	if err := chip8.LoadROM(filename); err != nil {
+	if err := chip8.Load(filename); err != nil {
 		panic(err)
 	}
 
-	// Print ROM for sanity sake
-	chip8.printRAM()
-
-	// Load game through arguments
-
-	for i := 0; i < 2000; i++{
-		// Emulate a cycle
-		chip8.Cycle()
-		// Check draw flag
-			// Draw
-
-		// Record key press
-	}
+	// Run ROM
+	chip8.Run()
 }
