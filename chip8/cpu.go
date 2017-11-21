@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 )
 
 type Cpu struct {
@@ -16,8 +17,8 @@ type Cpu struct {
 	SP uint16 // 16-bit Stack pointer
 	I  uint // Address register
 
-	DT int64 // Delay timer
-	ST int64 // Sound timer
+	DT byte // Delay timer
+	ST byte // Sound timer
 
 	Key [16]uint
 
@@ -189,7 +190,7 @@ func (cpu *Cpu) execute(opCode uint16) error {
 
 	} else if (opCode & 0xF000) == 0xC000 {
 		// Instruction Cxkk: Set Vx = random byte AND kk.
-		cpu.rand(vx)
+		cpu.rand(vx, kk)
 
 	} else if (opCode & 0xF000) == 0xD000 {
 		// Instruction Dxyn: Display nbyte sprite starting at memory
@@ -514,8 +515,10 @@ func (cpu *Cpu) skipIfNotXY(vx byte, vy byte) {
 func (cpu *Cpu) loadI(nnn uint16) {
 	fmt.Println("Instruction Annn: Set I = nnnn.")
 	fmt.Printf("nnn: %X\n", nnn)
-	fmt.Println("NOT YET IMPLEMENTED")
 
+	cpu.I = uint(nnn)
+
+	fmt.Printf("New I: %X", cpu.I)
 }
 
 // Instruction Bnnn: Jump to location nnn + V0.
@@ -523,17 +526,24 @@ func (cpu *Cpu) loadI(nnn uint16) {
 func (cpu *Cpu) jumpV0(nnn uint16) {
 	fmt.Println("Instruction Bnnn: Jump to location nnn + V0.")
 	fmt.Printf("nnn: %X\n", nnn)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.PC = uint16(cpu.V[0x0]) + nnn
+
+	fmt.Printf("New PC: %d\n", cpu.PC)
 }
 
 // Instruction Cxkk: Set Vx = random byte AND kk.
 // The interpreter generates a random number from 0 to 255,
 // which is then ANDed with the value kk. The results are stored in Vx.
 // See instruction 8xy2 for more information on AND.
-func (cpu *Cpu) rand(vx byte) {
+func (cpu *Cpu) rand(vx byte, kk byte) {
 	fmt.Println("Instruction Cxkk: Set Vx = random byte AND kk.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	r := byte(rand.Intn(256))
+	cpu.V[vx] = kk & r
+
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction Dxyn: Display n-byte sprite starting at memory location I at (Vx, Vy),
@@ -576,7 +586,9 @@ func (cpu *Cpu) skipIfKeyNot(vx byte) {
 func (cpu *Cpu) loadXDT(vx byte) {
 	fmt.Println("Instruction Fx07: Set Vx = delay timer value.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.DT
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction Fx0A: Wait for a key press, store the value of the key in Vx.
@@ -592,7 +604,10 @@ func (cpu *Cpu) loadKey(vx byte) {
 func (cpu *Cpu) loadDTX(vx byte) {
 	fmt.Println("Instruction Fx15: Set delay timer = Vx.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.DT = cpu.V[vx]
+
+	fmt.Printf("New DT: %d", cpu.DT)
 }
 
 // Instruction Fx18: Set sound timer = Vx.
@@ -600,7 +615,10 @@ func (cpu *Cpu) loadDTX(vx byte) {
 func (cpu *Cpu) loadSTX(vx byte) {
 	fmt.Println("Instruction Fx18: Set sounder timer = Vx.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.ST = cpu.V[vx]
+
+	fmt.Printf("New ST: %d", cpu.ST)
 }
 
 // Instruction Fx1E: Set I = I + Vx.
@@ -608,7 +626,10 @@ func (cpu *Cpu) loadSTX(vx byte) {
 func (cpu *Cpu) addIX(vx byte) {
 	fmt.Println("Instruction Fx1E : Set I = I + Vx.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.I = cpu.I + uint(cpu.V[vx])
+
+	fmt.Printf("New I: %X", cpu.I)
 }
 
 // Instruction Fx29: Set I = location of sprite for digit Vx.
@@ -635,7 +656,16 @@ func (cpu *Cpu) loadBCD(vx byte) {
 func (cpu *Cpu) saveV(vx byte) {
 	fmt.Println("Instruction Fx55: Store registers V0 through Vx in memory starting at location I.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	for i:= uint(0); i <= uint(vx); i++ {
+		cpu.RAM[cpu.I + i] = cpu.V[i]
+	}
+
+	fmt.Printf("New ")
+	for i:= uint(0); i <= uint(vx); i++ {
+		fmt.Printf("I+%d: %X", i, cpu.RAM[cpu.I + i])
+	}
+	fmt.Println()
 }
 
 // Instruction Fx65: Read registers V0 through Vx from memory starting at location I.
@@ -644,4 +674,10 @@ func (cpu *Cpu) loadV(vx byte) {
 	fmt.Println("Instruction Fx65: Read registers V0 through Vx in memory starting at location I.")
 	fmt.Printf("Vx: %X\n", vx)
 	fmt.Println("NOT YET IMPLEMENTED")
+
+	fmt.Printf("New ")
+	for i := range cpu.V {
+		fmt.Printf("V%X: %x\t", i, cpu.V[i])
+	}
+	fmt.Println()
 }
