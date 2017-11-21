@@ -7,8 +7,8 @@ func main() {
 	filename := flag.String("file", "", "ROM filename")
 	flag.Parse()
 
-	// Initialize CHIP8
-	chip8 := CHIP8{PC: 0x200}
+	// Initialize Cpu
+	chip8 := Cpu{}
 
 	// Load ROM
 	if err := chip8.LoadROM(filename); err != nil {
