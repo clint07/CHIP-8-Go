@@ -6,9 +6,9 @@ import (
 )
 
 type Cpu struct {
-	RAM   [4096]byte   // CHIP-8 is capable of accessing 4KB (4,096 bytes) of RAM.
-	GFX   [64][32]byte // CHIP-8 screen is 64x32 pixels.
-	Stack [16]uint     // 16 16-bit stack used for saving addresses before subroutines.
+	RAM   [4096]byte    // CHIP-8 is capable of accessing 4KB (4,096 bytes) of RAM.
+	GFX   [64 * 32]byte // CHIP-8 screen is 64x32 pixels.
+	Stack [16]uint      // 16 16-bit stack used for saving addresses before subroutines.
 
 	V [16]byte // 16 8-bit Registers: V0 - VE are general registers and VF is a flag register.
 
@@ -22,7 +22,7 @@ type Cpu struct {
 	Key [16]uint
 
 	RS int  // ROM Size: length of CHIP-8 program byte array
-	DF uint // Draw Flag
+	DF bool // Draw Flag
 }
 
 func (cpu *Cpu) LoadROM(filename *string) error {
@@ -53,6 +53,15 @@ func (cpu *Cpu) printRAM() {
 	}
 }
 
+// Helpful for debugging
+func (cpu *Cpu) printRegisters() {
+	fmt.Printf("\nPC: %d     SP: %d     I: %d\n", cpu.PC, cpu.SP, cpu.I)
+	for i := range cpu.V {
+		fmt.Printf("V%d: %x\t", i, cpu.V[i])
+	}
+	fmt.Println()
+}
+
 // Each opcode is 2 bytes, but RAM is a byte array, so it must be accessed twice to create the opcode.
 //
 // RAM[PC] = 0x01 (1 byte)
@@ -70,14 +79,17 @@ func (cpu *Cpu) getOpCode(PC uint) uint16 {
 }
 
 func (cpu *Cpu) Cycle() {
-	fmt.Printf("\nPC: %d\n", cpu.PC)
+	// Debug
+	cpu.printRegisters()
 
-	// Get opcode and increment PC twice
+	// Get opcode
 	opCode := cpu.getOpCode(cpu.PC)
-	cpu.PC += 2
 
 	// Execute code
 	cpu.execute(opCode)
+
+	// Increment PC
+	cpu.PC += 2
 }
 
 func (cpu *Cpu) execute(opCode uint16) error {
@@ -94,7 +106,7 @@ func (cpu *Cpu) execute(opCode uint16) error {
 
 	} else if opCode == 0x00EE {
 		// Instruction 00EE: Return from a subroutine.
-		cpu.ret()
+		return cpu.ret()
 
 	} else if (opCode & 0xF000) == 0x1000 {
 		// Instruction 1nnn: Jump to location nnn.
@@ -214,7 +226,7 @@ func (cpu *Cpu) execute(opCode uint16) error {
 		cpu.loadIX(vx)
 
 	} else if (opCode & 0xF0FF) == 0xF033 {
-		// Instruction Fx33: Store BCD represention of Vx in memory locations I, I+1, I+2.
+		// Instruction Fx33: Store BCD representation of Vx in memory locations I, I+1, I+2.
 		cpu.loadBCD(vx)
 
 	} else if (opCode & 0xF0FF) == 0xF055 {
@@ -235,16 +247,29 @@ func (cpu *Cpu) execute(opCode uint16) error {
 // Instruction 00E0: Clear the display.
 func (cpu *Cpu) clear() {
 	fmt.Println("Instruction 00E0: Clear the display.")
-	fmt.Println("NOT YET IMPLEMENTED")
 
+	// Zero out gfx
+	for i := range cpu.GFX {
+		cpu.GFX[i] = 0
+	}
+
+	// Set draw flag
+	cpu.DF = true
 }
 
 // Instruction 00EE: Return from a subroutine.
 // The interpreter sets the program counter to the address at the top of the stack,
 // then subtracts 1 from the stack pointer.
-func (cpu *Cpu) ret() {
+func (cpu *Cpu) ret() error {
 	fmt.Println("Instruction 00EE: Return from a subroutine.")
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	// Decrement Stack pointer and error if it's below 0.
+	if cpu.SP -= 1; cpu.SP < 0 {
+		return fmt.Errorf("stack pointer out of bounds: %d", cpu.SP)
+	}
+
+	cpu.PC = cpu.Stack[cpu.SP]
+	return nil
 }
 
 // Instruction 1nnn: Jump to location nnn.
