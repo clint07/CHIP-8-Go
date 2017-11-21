@@ -8,12 +8,12 @@ import (
 type Cpu struct {
 	RAM   [4096]byte    // CHIP-8 is capable of accessing 4KB (4,096 bytes) of RAM.
 	GFX   [64 * 32]byte // CHIP-8 screen is 64x32 pixels.
-	Stack [16]uint      // 16 16-bit stack used for saving addresses before subroutines.
+	Stack [16]uint16    // 16 16-bit stack used for saving addresses before subroutines.
 
 	V [16]byte // 16 8-bit Registers: V0 - VE are general registers and VF is a flag register.
 
-	PC uint // 16-bit Program counter. All programs start at 0x200.
-	SP uint // 8-bit Stack pointer
+	PC uint16 // 16-bit Program counter. All programs start at 0x200.
+	SP uint16 // 16-bit Stack pointer
 	I  uint // Address register
 
 	DT int64 // Delay timer
@@ -40,7 +40,7 @@ func (cpu *Cpu) LoadROM(filename *string) error {
 
 	// Copy program byte array into RAM
 	for i, b := range rom {
-		cpu.RAM[cpu.PC+uint(i)] = b
+		cpu.RAM[cpu.PC+uint16(i)] = b
 	}
 
 	return nil
@@ -56,9 +56,12 @@ func (cpu *Cpu) printRAM() {
 // Helpful for debugging
 func (cpu *Cpu) printRegisters() {
 	fmt.Printf("\nPC: %d     SP: %d     I: %d\n", cpu.PC, cpu.SP, cpu.I)
+	fmt.Printf("Stack: %v\n", cpu.Stack)
+
 	for i := range cpu.V {
-		fmt.Printf("V%d: %x\t", i, cpu.V[i])
+		fmt.Printf("V%X: %x\t", i, cpu.V[i])
 	}
+
 	fmt.Println()
 }
 
@@ -67,7 +70,7 @@ func (cpu *Cpu) printRegisters() {
 // RAM[PC] = 0x01 (1 byte)
 // RAM[PC + 1] = 0xFE (1 byte)
 // opcode = RAM[PC] + RAM[PC + 1] = 0x01FE
-func (cpu *Cpu) getOpCode(PC uint) uint16 {
+func (cpu *Cpu) getOpCode(PC uint16) uint16 {
 	opCode1 := uint16(cpu.RAM[PC])
 	opCode2 := uint16(cpu.RAM[PC+1])
 	opCode := opCode1<<8 | opCode2
@@ -263,12 +266,14 @@ func (cpu *Cpu) clear() {
 func (cpu *Cpu) ret() error {
 	fmt.Println("Instruction 00EE: Return from a subroutine.")
 
-	// Decrement Stack pointer and error if it's below 0.
+	// Decrement stack pointer and error if it's below 0.
 	if cpu.SP -= 1; cpu.SP < 0 {
 		return fmt.Errorf("stack pointer out of bounds: %d", cpu.SP)
 	}
 
 	cpu.PC = cpu.Stack[cpu.SP]
+
+	fmt.Printf("New PC: %d", cpu.PC)
 	return nil
 }
 
@@ -276,26 +281,44 @@ func (cpu *Cpu) ret() error {
 // The interpreter sets the program counter to nnn.
 func (cpu *Cpu) jump(nnn uint16) {
 	fmt.Println("Instruction 1nnn: Jump to location nnn.")
-	fmt.Printf("nnn: %X\n", nnn)
-	fmt.Println("NOT YET IMPLEMENTED")
+	fmt.Printf("nnn: %d\n", nnn)
+
+	cpu.PC = nnn
+
+	fmt.Printf("New PC: %d\n", cpu.PC)
 }
 
 // Instruction 2nnn: Call subroutine at nnn.
 // The interpreter increments the stack pointer, then puts the current PC on the top of the stack.
 // The PC is then set to nnn.
-func (cpu *Cpu) call(nnn uint16) {
+func (cpu *Cpu) call(nnn uint16) error {
 	fmt.Println("Instruction 2nnn: Call subroutine at nnn.")
-	fmt.Printf("nnn: %X\n", nnn)
-	fmt.Println("NOT YET IMPLEMENTED")
+	fmt.Printf("nnn: %d\n", nnn)
+
+	cpu.Stack[cpu.SP] = cpu.PC
+	cpu.PC = nnn
+
+	// Increment stack pointer and error if it's above it's length
+	if cpu.SP += 1; cpu.SP > uint16(len(cpu.Stack)) {
+		fmt.Errorf("stack pointer out of points: %d", cpu.SP)
+	}
+
+	fmt.Printf("New Stack: %v\nnew SP: %d\tPC: %d\n", cpu.Stack, cpu.SP, cpu.PC)
+	return nil
 }
 
 // Instruction 3xkk: Skip next instruction if Vx = kk.
 // The interpreter compares register Vx to kk, and if they are equal,
 // increments the program counter by 2.
 func (cpu *Cpu) skipIf(vx byte, kk byte) {
-	fmt.Println("Instruction 3xkk: Skip next instructionif Vx = kk.")
+	fmt.Println("Instruction 3xkk: Skip next instruction if Vx == kk.")
 	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	if cpu.V[vx] == kk {
+		cpu.PC += 2
+	}
+
+	fmt.Printf("New PC: %d\n", cpu.PC)
 }
 
 // Instruction 4xkk: Skip next instruction if Vx != kk.
@@ -304,7 +327,12 @@ func (cpu *Cpu) skipIf(vx byte, kk byte) {
 func (cpu *Cpu) skipIfNot(vx byte, kk byte) {
 	fmt.Println("Instruction 4xkk: Skip next instruction if Vx != kk.")
 	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	if cpu.V[vx] != kk {
+		cpu.PC += 2
+	}
+
+	fmt.Printf("New PC: %d\n", cpu.PC)
 }
 
 // Instruction 5xy0: Skip next instruction if Vx = Vy.
@@ -313,7 +341,12 @@ func (cpu *Cpu) skipIfNot(vx byte, kk byte) {
 func (cpu *Cpu) skipIfXY(vx byte, vy byte) {
 	fmt.Println("Instruction 5xy0: Skip next isntruction if Vx = Vy.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	if vx == vy {
+		cpu.PC += 2
+	}
+
+	fmt.Printf("New PC: %d\n", cpu.PC)
 }
 
 // Instruction 6xkk: Set Vx = kk.
@@ -321,7 +354,10 @@ func (cpu *Cpu) skipIfXY(vx byte, vy byte) {
 func (cpu *Cpu) load(vx byte, kk byte) {
 	fmt.Println("Instruction 6xkk: Set Vx = kk.")
 	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = kk
+
+	fmt.Printf("New V%X: %X\n", vx, cpu.V[vx])
 }
 
 // Instruction 7xkk: Set Vx = Vx + kk.
@@ -329,7 +365,10 @@ func (cpu *Cpu) load(vx byte, kk byte) {
 func (cpu *Cpu) add(vx byte, kk byte) {
 	fmt.Println("Instruction 7xkk: Set Vx = Vx + kk.")
 	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] += kk
+
+	fmt.Printf("New V%X: %X\n", vx, cpu.V[vx])
 }
 
 // Instruction 8xy0: Set Vx = Vy.
@@ -337,7 +376,10 @@ func (cpu *Cpu) add(vx byte, kk byte) {
 func (cpu *Cpu) loadXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy0: Set Vx = Vy.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.V[vy]
+
+	fmt.Printf("New V%X: %X\n", vx, cpu.V[vx])
 }
 
 // Instruction 8xy1: Set Vx = Vx OR Vy.
@@ -347,7 +389,10 @@ func (cpu *Cpu) loadXY(vx byte, vy byte) {
 func (cpu *Cpu) orXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy1: Set Vx = Vx | Vy.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.V[vx] | cpu.V[vy]
+
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction 8xy2: Set Vx = Vx AND Vy.
@@ -357,7 +402,10 @@ func (cpu *Cpu) orXY(vx byte, vy byte) {
 func (cpu *Cpu) andXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy2: Set Vx = Vx & Vy.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.V[vx] & cpu.V[vy]
+
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction 8xy3: Set Vx = Vx XOR Vy.
@@ -368,7 +416,10 @@ func (cpu *Cpu) andXY(vx byte, vy byte) {
 func (cpu *Cpu) xorXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy3: Set Vx = Vx ^ Vy.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.V[vx] ^ cpu.V[vy]
+
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.
@@ -377,7 +428,10 @@ func (cpu *Cpu) xorXY(vx byte, vy byte) {
 func (cpu *Cpu) addXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.V[vx] + cpu.V[vy]
+
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.
@@ -386,7 +440,10 @@ func (cpu *Cpu) addXY(vx byte, vy byte) {
 func (cpu *Cpu) subXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[vx] = cpu.V[vx] + cpu.V[vy]
+
+	fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 }
 
 // Instruction 8xy6: Set Vx = Vx SHR 1.

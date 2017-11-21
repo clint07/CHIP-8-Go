@@ -20,7 +20,7 @@ func main() {
 
 	// Load game through arguments
 
-	for i := 0; i < 5; i++{
+	for i := 0; i < 500; i++{
 		// Emulate a cycle
 		chip8.Cycle()
 		// Check draw flag
