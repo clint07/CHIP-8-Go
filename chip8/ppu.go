@@ -1,4 +1,4 @@
-package main
+package CHIP8
 
 //import "github.com/veandco/go-sdl2/sdl"
 

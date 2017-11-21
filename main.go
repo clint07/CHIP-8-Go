@@ -1,6 +1,9 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"github.com/clint07/CHIP-8/chip8"
+)
 
 func main() {
 	// Parse command line arguments
@@ -8,7 +11,7 @@ func main() {
 	flag.Parse()
 
 	// Initialize VM
-	chip8 := Chip8{}
+	chip8 := CHIP8.Chip8{}
 	chip8.Init()
 
 	// Load ROM

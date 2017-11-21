@@ -1,4 +1,4 @@
-package main
+package CHIP8
 
 type Chip8 struct {
 	vm *VM
