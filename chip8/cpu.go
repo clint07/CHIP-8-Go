@@ -673,7 +673,10 @@ func (cpu *Cpu) saveV(vx byte) {
 func (cpu *Cpu) loadV(vx byte) {
 	fmt.Println("Instruction Fx65: Read registers V0 through Vx in memory starting at location I.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	for i := uint(0); i <= uint(vx); i++ {
+		cpu.V[i] = cpu.RAM[cpu.I+i]
+	}
 
 	fmt.Printf("New ")
 	for i := range cpu.V {
