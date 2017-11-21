@@ -60,12 +60,14 @@ func (chip8 *CHIP8) getOpCode(PC uint) uint16 {
 	opCode2 := uint16(chip8.RAM[PC+1])
 	opCode := opCode1<<8 | opCode2
 
-	fmt.Printf("\n1st OpCode: %X\n2nd OpCode: %X\nOpCode: %X\n", opCode1, opCode2, opCode)
+	//fmt.Printf("1st OpCode: %X\n2nd OpCode: %X\n", opCode1, opCode2)
+	fmt.Printf("OpCode: %X\n", opCode)
 
 	return opCode
 }
 
 func (chip8 *CHIP8) Cycle() {
+	fmt.Printf("\nPC: %d\n", chip8.PC)
 	// Get opcode and increment PC twice
 	opCode := chip8.getOpCode(chip8.PC)
 	chip8.PC += 2
@@ -75,8 +77,8 @@ func (chip8 *CHIP8) Cycle() {
 }
 
 func (chip8 *CHIP8) execute(opCode uint16) error {
-	vx := byte(opCode & 0x0F00)
-	vy := byte(opCode & 0x00F0)
+	vx := byte((opCode & 0x0F00) >> 8)
+	vy := byte((opCode & 0x00F0) >> 4)
 
 	nnn := uint16(opCode & 0x0FFF)
 	kk := byte(opCode & 0x00FF)
@@ -222,6 +224,7 @@ func (chip8 *CHIP8) execute(opCode uint16) error {
 	} else {
 		fmt.Errorf("Unknown instruction: %X\n\n", opCode)
 	}
+
 	return nil
 }
 
@@ -242,6 +245,7 @@ func (chip8 *CHIP8) ret() {
 // The interpreter sets the program counter to nnn.
 func (chip8 *CHIP8) jump(nnn uint16) {
 	fmt.Println("Instruction 1nnn: Jump to location nnn.")
+	fmt.Printf("nnn: %X\n", nnn)
 }
 
 // Instruction 2nnn: Call subroutine at nnn.
@@ -249,6 +253,7 @@ func (chip8 *CHIP8) jump(nnn uint16) {
 // The PC is then set to nnn.
 func (chip8 *CHIP8) call(nnn uint16) {
 	fmt.Println("Instruction 2nnn: Call subroutine at nnn.")
+	fmt.Printf("nnn: %X\n", nnn)
 }
 
 // Instruction 3xkk: Skip next instruction if Vx = kk.
@@ -256,7 +261,7 @@ func (chip8 *CHIP8) call(nnn uint16) {
 // increments the program counter by 2.
 func (chip8 *CHIP8) skipIf(vx byte, kk byte) {
 	fmt.Println("Instruction 3xkk: Skip next instructionif Vx = kk.")
-
+	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 }
 
 // Instruction 4xkk: Skip next instruction if Vx != kk.
@@ -264,7 +269,7 @@ func (chip8 *CHIP8) skipIf(vx byte, kk byte) {
 // increments the program counter by 2.
 func (chip8 *CHIP8) skipIfNot(vx byte, kk byte) {
 	fmt.Println("Instruction 4xkk: Skip next instruction if Vx != kk.")
-
+	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 }
 
 // Instruction 5xy0: Skip next instruction if Vx = Vy.
@@ -272,28 +277,28 @@ func (chip8 *CHIP8) skipIfNot(vx byte, kk byte) {
 // increments the program counter by 2.
 func (chip8 *CHIP8) skipIfXY(vx byte, vy byte) {
 	fmt.Println("Instruction 5xy0: Skip next isntruction if Vx = Vy.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 6xkk: Set Vx = kk.
 // The interpreter puts the value kk into register Vx.
 func (chip8 *CHIP8) load(vx byte, kk byte) {
 	fmt.Println("Instruction 6xkk: Set Vx = kk.")
-
+	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 }
 
 // Instruction 7xkk: Set Vx = Vx + kk.
 // Adds the value kk to the value of register Vx, then stores the result in Vx.
 func (chip8 *CHIP8) add(vx byte, kk byte) {
 	fmt.Println("Instruction 7xkk: Set Vx = Vx + kk.")
-
+	fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 }
 
 // Instruction 8xy0: Set Vx = Vy.
 // Stores the value of register Vy in register Vx.
 func (chip8 *CHIP8) loadXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy0: Set Vx = Vy.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xy1: Set Vx = Vx OR Vy.
@@ -302,7 +307,7 @@ func (chip8 *CHIP8) loadXY(vx byte, vy byte) {
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func (chip8 *CHIP8) orXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy1: Set Vx = Vx | Vy.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xy2: Set Vx = Vx AND Vy.
@@ -311,7 +316,7 @@ func (chip8 *CHIP8) orXY(vx byte, vy byte) {
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func (chip8 *CHIP8) andXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy2: Set Vx = Vx & Vy.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xy3: Set Vx = Vx XOR Vy.
@@ -321,7 +326,7 @@ func (chip8 *CHIP8) andXY(vx byte, vy byte) {
 // Otherwise, it is 0.
 func (chip8 *CHIP8) xorXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy3: Set Vx = Vx ^ Vy.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.
@@ -329,7 +334,7 @@ func (chip8 *CHIP8) xorXY(vx byte, vy byte) {
 // VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
 func (chip8 *CHIP8) addXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.
@@ -337,14 +342,15 @@ func (chip8 *CHIP8) addXY(vx byte, vy byte) {
 // and the results stored in Vx.
 func (chip8 *CHIP8) subXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xy6: Set Vx = Vx SHR 1.
 // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
 // Then Vx is divided by 2.
 func (chip8 *CHIP8) shiftRight(vx byte) {
-
+	fmt.Println("Instruction 8xy6: Set Vx = Vx SHR 1.")
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.
@@ -352,7 +358,7 @@ func (chip8 *CHIP8) shiftRight(vx byte) {
 // and the results stored in Vx.
 func (chip8 *CHIP8) subnXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction 8xyE: Set Vx = Vx SHL 1.
@@ -360,7 +366,7 @@ func (chip8 *CHIP8) subnXY(vx byte, vy byte) {
 // Then Vx is multiplied by 2.
 func (chip8 *CHIP8) shiftLeft(vx byte) {
 	fmt.Println("Instruction 8xyE: Set Vx = Vx SHL 1.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction 9xy0: Skip next instruction if Vx != Vy.
@@ -368,13 +374,14 @@ func (chip8 *CHIP8) shiftLeft(vx byte) {
 // the program counter is increased by 2.
 func (chip8 *CHIP8) skipIfNotXY(vx byte, vy byte) {
 	fmt.Println("Instruction 9xy0: Skip next instruction if Vx != Vy.")
-
+	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 }
 
 // Instruction Annn: Set I = nnn.
 // The value of register I is set to nnn.
 func (chip8 *CHIP8) loadI(nnn uint16) {
 	fmt.Println("Instruction Annn: Set I = nnnn.")
+	fmt.Printf("nnn: %X\n", nnn)
 
 }
 
@@ -382,7 +389,7 @@ func (chip8 *CHIP8) loadI(nnn uint16) {
 // The program counter is set to nnn plus the value of V0.
 func (chip8 *CHIP8) jumpV0(nnn uint16) {
 	fmt.Println("Instruction Bnnn: Jump to location nnn + V0.")
-
+	fmt.Printf("nnn: %X\n", nnn)
 }
 
 // Instruction Cxkk: Set Vx = random byte AND kk.
@@ -391,7 +398,7 @@ func (chip8 *CHIP8) jumpV0(nnn uint16) {
 // See instruction 8xy2 for more information on AND.
 func (chip8 *CHIP8) rand(vx byte) {
 	fmt.Println("Instruction Cxkk: Set Vx = random byte AND kk.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Dxyn: Display n-byte sprite starting at memory location I at (Vx, Vy),
@@ -407,7 +414,7 @@ func (chip8 *CHIP8) rand(vx byte) {
 func (chip8 *CHIP8) draw(vx byte, vy byte, n byte) {
 	fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), " +
 		"set Vf = collusion.")
-
+	fmt.Printf("Vx: %X\tVy: %X\tn: %X\n", vx, vy, n)
 }
 
 // Instruction Ex9E: Skip next instruction if key with the value of Vx is pressed.
@@ -415,7 +422,7 @@ func (chip8 *CHIP8) draw(vx byte, vy byte, n byte) {
 // in the down position, PC is increased by 2.
 func (chip8 *CHIP8) skipIfKey(vx byte) {
 	fmt.Println("Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
@@ -423,42 +430,42 @@ func (chip8 *CHIP8) skipIfKey(vx byte) {
 // in the up position, PC is increased by 2.
 func (chip8 *CHIP8) skipIfKeyNot(vx byte) {
 	fmt.Println("Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
 // The value of DT is placed into Vx.
 func (chip8 *CHIP8) loadXDT(vx byte) {
 	fmt.Println("Instruction Fx07: Set Vx = delay timer value.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx0A: Wait for a key press, store the value of the key in Vx.
 // All execution stops until a key is pressed, then the value of that key is stored in Vx.
 func (chip8 *CHIP8) loadKey(vx byte) {
 	fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx15: Set delay timer = Vx.
 // DT is set equal to the value of Vx.
 func (chip8 *CHIP8) loadDTX(vx byte) {
 	fmt.Println("Instruction Fx15: Set delay timer = Vx.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx18: Set sound timer = Vx.
 // ST is set equal to the value of Vx.
 func (chip8 *CHIP8) loadSTX(vx byte) {
 	fmt.Println("Instruction Fx18: Set sounder timer = Vx.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx1E: Set I = I + Vx.
 // The values of I and Vx are added, and the results are stored in I.
 func (chip8 *CHIP8) addIX(vx byte) {
 	fmt.Println("Instruction Fx1E : Set I = I + Vx.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx29: Set I = location of sprite for digit Vx.
@@ -466,7 +473,7 @@ func (chip8 *CHIP8) addIX(vx byte) {
 // to the value of Vx. See section 2.4, Display, for more information on the Chip-8 hexadecimal font.
 func (chip8 *CHIP8) loadIX(vx byte) {
 	fmt.Println("Instruction Fx29: Set I = location of sprite for digit Vx.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx33: Store BCD representation of Vx in memory locations I, I+1, and I+2.
@@ -474,7 +481,7 @@ func (chip8 *CHIP8) loadIX(vx byte) {
 // at location in I, the tens digit at location I+1, and the ones digit at location I+2.
 func (chip8 *CHIP8) loadBCD(vx byte) {
 	fmt.Println("Instruction Fx33: Store BCD represention of Vx in memory locations I, I+1, I+2.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx55: Store registers V0 through Vx in memory starting at location I.
@@ -482,12 +489,12 @@ func (chip8 *CHIP8) loadBCD(vx byte) {
 // starting at the address in I.
 func (chip8 *CHIP8) saveV(vx byte) {
 	fmt.Println("Instruction Fx55: Store registers V0 through Vx in memory starting at location I.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
 
 // Instruction Fx65: Read registers V0 through Vx from memory starting at location I.
 // The interpreter reads values from memory starting at location I into registers V0 through Vx.
 func (chip8 *CHIP8) loadV(vx byte) {
 	fmt.Println("Instruction Fx65: Read registers V0 through Vx in memory starting at location I.")
-
+	fmt.Printf("Vx: %X\n", vx)
 }
