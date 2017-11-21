@@ -169,7 +169,7 @@ func (cpu *Cpu) execute(opCode uint16) error {
 
 	} else if (opCode & 0xF00F) == 0x8007 {
 		// Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.
-		cpu.subnXY(vx, vy)
+		cpu.subYX(vx, vy)
 
 	} else if (opCode & 0xF00F) == 0x8000 {
 		// Instruction 8xyE: Set Vx = Vx SHL 1.
@@ -452,16 +452,31 @@ func (cpu *Cpu) subXY(vx byte, vy byte) {
 func (cpu *Cpu) shiftRight(vx byte) {
 	fmt.Println("Instruction 8xy6: Set Vx = Vx SHR 1.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	cpu.V[0xF] = cpu.V[vx] & 0x1
+
+	// Another way to divide by 2
+	cpu.V[vx] = cpu.V[vx] >> 1
+
+	fmt.Printf("New V%X: %X\tVF: %X", vx, cpu.V[vx], cpu.V[0xF])
 }
 
 // Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.
 // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
 // and the results stored in Vx.
-func (cpu *Cpu) subnXY(vx byte, vy byte) {
+func (cpu *Cpu) subYX(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	if vy > vx {
+		cpu.V[0xF] = 1
+	} else {
+		cpu.V[0xF] = 0
+	}
+
+	cpu.V[vx] = cpu.V[vy] - cpu.V[vx]
+
+	fmt.Printf("New V%X: %d\tVF: %d\n", vx, cpu.V[vx], cpu.V[0xF])
 }
 
 // Instruction 8xyE: Set Vx = Vx SHL 1.
@@ -470,7 +485,14 @@ func (cpu *Cpu) subnXY(vx byte, vy byte) {
 func (cpu *Cpu) shiftLeft(vx byte) {
 	fmt.Println("Instruction 8xyE: Set Vx = Vx SHL 1.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	// Get the most significant bit in a byte
+	cpu.V[0xF] = cpu.V[vx] >> 7
+
+	// Multiple by 2
+	cpu.V[vx] = cpu.V[vx] << 1
+
+	fmt.Printf("New V%X: %d\tVF: %d\n", vx, cpu.V[vx], cpu.V[0xF])
 }
 
 // Instruction 9xy0: Skip next instruction if Vx != Vy.
@@ -479,7 +501,12 @@ func (cpu *Cpu) shiftLeft(vx byte) {
 func (cpu *Cpu) skipIfNotXY(vx byte, vy byte) {
 	fmt.Println("Instruction 9xy0: Skip next instruction if Vx != Vy.")
 	fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	if cpu.V[vx] != cpu.V[vy] {
+		cpu.PC += 2
+	}
+
+	fmt.Printf("New PC: %d\n", cpu.PC)
 }
 
 // Instruction Annn: Set I = nnn.
