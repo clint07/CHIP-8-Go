@@ -6,36 +6,36 @@ type Chip8 struct {
 	apu *APU
 }
 
-func (this *Chip8) Init() {
+func (self *Chip8) Init() {
 	// Initialize VM
-	this.vm = &VM{}
-	this.vm.Init()
+	self.vm = &VM{}
+	self.vm.Init()
 
 	// Create PPU
-	this.ppu = &PPU{}
-	this.ppu.Init()
+	self.ppu = &PPU{}
+	self.ppu.Init()
 
 	// Create APU
-	this.apu = &APU{}
-	this.apu.Init()
+	self.apu = &APU{}
+	self.apu.Init()
 }
 
-func (this *Chip8) Load(filename *string) error {
-	if err := this.vm.Load(filename); err != nil {
+func (self *Chip8) Load(filename *string) error {
+	if err := self.vm.Load(filename); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (this *Chip8) Run() {
+func (self *Chip8) Run() {
 	// Print ROM for sanity sake
-	this.vm.printRAM()
+	self.vm.printRAM()
 
 	// Run ROM
 	for i := 0; i < 2000; i++ {
 		// Emulate a cycle
-		this.vm.Cycle()
+		self.vm.Cycle()
 		// Check draw flag
 		// Draw
 
@@ -43,6 +43,6 @@ func (this *Chip8) Run() {
 	}
 }
 
-func (this *Chip8) Shutdown() {
-	this.ppu.destroy()
+func (self *Chip8) Shutdown() {
+	self.ppu.destroy()
 }
