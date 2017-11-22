@@ -3,13 +3,13 @@
 
 [[projects]]
   name = "github.com/veandco/go-sdl2"
-  packages = ["sdl"]
+  packages = ["gfx","sdl"]
   revision = "30f30965227962032c13bd0b12a89e6a5107c768"
   version = "v0.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0b62d9d4a41df499ab35f104d28a0276a49c40af695c3eafa1590731ede75693"
+  inputs-digest = "a9fb16996c38b1dffaa1dd9c6536e323db8f269ccf56490f27d9204551439d01"
   solver-name = "gps-cdcl"
   solver-version = 1

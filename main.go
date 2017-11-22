@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/clint07/CHIP-8/chip8"
+	"time"
 )
 
 func main() {
@@ -10,7 +11,7 @@ func main() {
 	filename := flag.String("file", "", "ROM filename")
 	flag.Parse()
 
-	// Initialize VM
+	// Initialize CHIP-8
 	chip8 := CHIP8.Chip8{}
 	chip8.Init()
 
@@ -21,4 +22,8 @@ func main() {
 
 	// Run ROM
 	chip8.Run()
+	time.Sleep(8 * time.Second)
+
+	// Shutdown CHIP-8
+	chip8.Shutdown()
 }
