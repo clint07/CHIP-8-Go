@@ -1,15 +1,15 @@
 package CHIP8
 
 type Chip8 struct {
-	vm *VM
+	cpu *CPU
 	ppu *PPU
 	apu *APU
 }
 
 func (self *Chip8) Init() {
-	// Initialize VM
-	self.vm = &VM{}
-	self.vm.Init()
+	// Initialize CPU
+	self.cpu = &CPU{}
+	self.cpu.Init()
 
 	// Create PPU
 	self.ppu = &PPU{}
@@ -21,7 +21,7 @@ func (self *Chip8) Init() {
 }
 
 func (self *Chip8) Load(filename *string) error {
-	if err := self.vm.Load(filename); err != nil {
+	if err := self.cpu.LoadROM(filename); err != nil {
 		return err
 	}
 
@@ -30,12 +30,12 @@ func (self *Chip8) Load(filename *string) error {
 
 func (self *Chip8) Run() {
 	// Print ROM for sanity sake
-	self.vm.printRAM()
+	self.cpu.printRAM()
 
 	// Run ROM
-	for i := 0; i < 2000; i++ {
+	for i := 0; i < 20; i++ {
 		// Emulate a cycle
-		self.vm.Cycle()
+		self.cpu.Cycle()
 		// Check draw flag
 		// Draw
 
