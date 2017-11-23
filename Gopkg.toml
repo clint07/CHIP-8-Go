@@ -24,7 +24,3 @@
 [[constraint]]
   name = "github.com/veandco/go-sdl2"
   version = "0.2.0"
-
-[[constraint]]
-  name = "go.uber.org/zap"
-  version = "1.7.1"

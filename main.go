@@ -22,7 +22,7 @@ func main() {
 
 	// Run ROM
 	chip8.Run()
-	time.Sleep(8 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// Shutdown CHIP-8
 	chip8.Shutdown()

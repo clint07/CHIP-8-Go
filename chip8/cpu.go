@@ -51,7 +51,6 @@ func (self *CPU) loadFont() {
 		for i, font := range fonts {
 			self.RAM[i] = font
 		}
-
 }
 
 func (self *CPU) LoadROM(filename *string) error {
@@ -78,9 +77,16 @@ func (self *CPU) LoadROM(filename *string) error {
 // Helpful for debugging
 func (self *CPU) printRAM() {
 	for i := 0; i < self.RS+512; i++ {
-		fmt.Printf("%d: %X\n", i, self.RAM[i])
+		if i % 10 == 0 {
+			fmt.Printf("\n%d: %X", i, self.RAM[i])
+		} else if self.RAM[i] & 0xF0 == 0{
+			fmt.Printf("\t\t%d: 0%X", i, self.RAM[i])
+		} else {
+			fmt.Printf("\t\t%d: %X", i, self.RAM[i])
+		}
 	}
 
+	fmt.Println()
 }
 
 // Helpful for debugging
