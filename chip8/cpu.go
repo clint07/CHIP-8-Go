@@ -608,6 +608,8 @@ func (self *CPU) skipIfKey(vx byte) {
 	if self.Key[self.V[vx]] {
 		self.PC += 2
 	}
+
+	fmt.Printf("New PC: %d\tKey: %d\tPressed: %t", self.PC, self.V[vx], self.Key[self.V[vx]])
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
@@ -621,6 +623,8 @@ func (self *CPU) skipIfKeyNot(vx byte) {
 	if !self.Key[self.V[vx]] {
 		self.PC += 2
 	}
+
+	fmt.Printf("New PC: %d\tKey: %d\tUnpressed: %t", self.PC, self.V[vx], self.Key[self.V[vx]])
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
