@@ -33,7 +33,7 @@ func (self *Chip8) Run() {
 	self.cpu.printRAM()
 
 	// Run ROM
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 5000; i++ {
 		// Emulate a cycle
 		self.cpu.Cycle()
 		// Check draw flag
