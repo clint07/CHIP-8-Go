@@ -20,7 +20,7 @@ type CPU struct {
 	DT byte // Delay timer
 	ST byte // Sound timer
 
-	Key [16]uint
+	Key [16]bool
 
 	RS int  // ROM Size: length of CHIP-8 program byte array
 	DF bool // Draw Flag
@@ -603,7 +603,11 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 func (self *CPU) skipIfKey(vx byte) {
 	fmt.Println("Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	// If the key is pressed
+	if self.Key[self.V[vx]] {
+		self.PC += 2
+	}
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
@@ -612,7 +616,11 @@ func (self *CPU) skipIfKey(vx byte) {
 func (self *CPU) skipIfKeyNot(vx byte) {
 	fmt.Println("Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	// If the key isn't pressed
+	if !self.Key[self.V[vx]] {
+		self.PC += 2
+	}
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
@@ -631,6 +639,7 @@ func (self *CPU) loadKey(vx byte) {
 	fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
 	fmt.Printf("Vx: %X\n", vx)
 	fmt.Println("NOT YET IMPLEMENTED")
+	fmt.Println("Maybe use a goroutine?")
 }
 
 // Instruction Fx15: Set delay timer = Vx.
