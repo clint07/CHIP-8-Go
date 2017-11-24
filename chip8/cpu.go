@@ -609,7 +609,7 @@ func (self *CPU) skipIfKey(vx byte) {
 		self.PC += 2
 	}
 
-	fmt.Printf("New PC: %d\tKey: %d\tPressed: %t", self.PC, self.V[vx], self.Key[self.V[vx]])
+	fmt.Printf("New PC: %d\tKey: %d\tPressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
@@ -624,7 +624,7 @@ func (self *CPU) skipIfKeyNot(vx byte) {
 		self.PC += 2
 	}
 
-	fmt.Printf("New PC: %d\tKey: %d\tNot Pressed: %t", self.PC, self.V[vx], self.Key[self.V[vx]])
+	fmt.Printf("New PC: %d\tKey: %d\tNot Pressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
@@ -684,8 +684,11 @@ func (self *CPU) addIX(vx byte) {
 // to the value of Vx. See section 2.4, Display, for more information on the Chip-8 hexadecimal font.
 func (self *CPU) loadIX(vx byte) {
 	fmt.Println("Instruction Fx29: Set I = location of sprite for digit Vx.")
-	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
+	fmt.Printf("V%X: %X\tI: %X\n", vx, self.V[vx], self.I)
+
+	self.I = uint(self.V[vx]) * 5
+
+	fmt.Printf("New I: %X\n\n", self.I)
 }
 
 // Instruction Fx33: Store BCD representation of Vx in memory locations I, I+1, and I+2.
