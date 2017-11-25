@@ -8,7 +8,7 @@ import (
 
 type CPU struct {
 	RAM   [4096]byte    // CHIP-8 is capable of accessing 4KB (4,096 bytes) of RAM.
-	GFX   [64 * 32]byte // CHIP-8 screen is 64x32 pixels.
+	GFX   [32][64]byte // CHIP-8 screen is 64x32 pixels.
 	Stack [16]uint16    // 16 16-bit stack used for saving addresses before subroutines.
 
 	V [16]byte // 16 8-bit Registers: V0 - VE are general registers and VF is a flag register.
@@ -288,9 +288,8 @@ func (self *CPU) clear() {
 	//fmt.Println("Instruction 00E0: Clear the display.")
 
 	// Zero out gfx
-	for i := range self.GFX {
-		self.GFX[i] = 0
-	}
+	self.GFX = [32][64]byte{}
+
 
 	// Set draw flag
 	self.DF = true
@@ -465,7 +464,14 @@ func (self *CPU) addXY(vx byte, vy byte) {
 	//fmt.Println("Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
-	self.V[vx] = self.V[vx] + self.V[vy]
+	num := uint(self.V[vx]) + uint(self.V[vy])
+	if num > 255 {
+		self.V[0xF] = 1
+	} else {
+		self.V[0xF] = 0
+	}
+
+	self.V[vx] = byte(num)
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
 }
@@ -476,6 +482,12 @@ func (self *CPU) addXY(vx byte, vy byte) {
 func (self *CPU) subXY(vx byte, vy byte) {
 	//fmt.Println("Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
+
+	if self.V[vx] > self.V[vy] {
+		self.V[0xF] = 1
+	} else {
+		self.V[0xF] = 0
+	}
 
 	self.V[vx] = self.V[vx] + self.V[vy]
 
@@ -542,7 +554,7 @@ func (self *CPU) skipIfNotXY(vx byte, vy byte) {
 		self.PC += 2
 	}
 
-	fmt.Printf("New PC: %d\n", self.PC)
+	//fmt.Printf("New PC: %d\n", self.PC)
 }
 
 // Instruction Annn: Set I = nnn.
@@ -594,7 +606,44 @@ func (self *CPU) rand(vx byte, kk byte) {
 func (self *CPU) draw(vx byte, vy byte, n byte) {
 	fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
 	fmt.Printf("Vx: %X\tVy: %X\tn: %X\n", vx, vy, n)
-	fmt.Println("NOT YET IMPLEMENTED")
+
+	x := self.V[vx]
+	y := self.V[vy]
+
+	fmt.Printf("Coordinates: (%d, %d)\n", x, y)
+	for i := uint(0); i < uint(n); i++ {
+		value := self.RAM[self.I+i]
+		fmt.Printf("%b", value)
+		for j := uint(0); j < 8; j++ {
+			//fmt.Printf("%b", )
+
+			if value & (0x80 >> j) != 0 {
+				fmt.Printf("(%d,%d): %b\t", x+byte(j), y+byte(i), 1)
+				//fmt.Printf("%d", 1)
+				if self.GFX[y+byte(i)][x + byte(j)] == 1 {
+					self.V[0xF] = 1
+				}
+
+				self.GFX[y+byte(i)][x + byte(j)] ^= 1
+			} else {
+				fmt.Printf("(%d,%d): %b\t", x+byte(i), y+byte(j), 0)
+				//fmt.Printf(" ")
+			}
+		}
+		fmt.Println()
+	}
+
+	//fmt.Print(self.GFX)
+	//fmt.Println("GFX\n\n\n\n\n")
+	for i := 0; i < 32; i++ {
+		for j := 0; j < 64; j++ {
+			fmt.Printf("%d", self.GFX[i][j])
+		}
+		fmt.Println()
+	}
+
+	//fmt.Printf("%b\n", mem)
+	self.DF = true
 }
 
 // Instruction Ex9E: Skip next instruction if key with the value of Vx is pressed.
@@ -683,12 +732,12 @@ func (self *CPU) addIX(vx byte) {
 // The value of I is set to the location for the hexadecimal sprite corresponding
 // to the value of Vx. See section 2.4, Display, for more information on the Chip-8 hexadecimal font.
 func (self *CPU) loadIX(vx byte) {
-	fmt.Println("Instruction Fx29: Set I = location of sprite for digit Vx.")
-	fmt.Printf("V%X: %X\tI: %X\n", vx, self.V[vx], self.I)
+	//fmt.Println("Instruction Fx29: Set I = location of sprite for digit Vx.")
+	//fmt.Printf("V%X: %X\tI: %X\n", vx, self.V[vx], self.I)
 
 	self.I = uint(self.V[vx]) * 5
 
-	fmt.Printf("New I: %X\n\n", self.I)
+	//fmt.Printf("New I: %X\n\n", self.I)
 }
 
 // Instruction Fx33: Store BCD representation of Vx in memory locations I, I+1, and I+2.
