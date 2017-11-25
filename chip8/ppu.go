@@ -2,11 +2,13 @@ package CHIP8
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
+	//"fmt"
 )
 
 type PPU struct {
 	window   *sdl.Window
 	renderer *sdl.Renderer
+	keypad map[sdl.Scancode]byte
 }
 
 const (
@@ -16,6 +18,24 @@ const (
 )
 
 func (self *PPU) Init() error {
+	self.keypad = map[sdl.Scancode]byte {
+		sdl.SCANCODE_1: 0x1,
+		sdl.SCANCODE_2: 0x2,
+		sdl.SCANCODE_3: 0x3,
+		sdl.SCANCODE_4: 0x4,
+		sdl.SCANCODE_5: 0x5,
+		sdl.SCANCODE_6: 0x6,
+		sdl.SCANCODE_7: 0x7,
+		sdl.SCANCODE_8: 0x8,
+		sdl.SCANCODE_9: 0x9,
+		sdl.SCANCODE_0: 0x0,
+		sdl.SCANCODE_A: 0xA,
+		sdl.SCANCODE_B: 0xB,
+		sdl.SCANCODE_C: 0xB,
+		sdl.SCANCODE_D: 0xC,
+		sdl.SCANCODE_E: 0xD,
+		sdl.SCANCODE_F: 0xF}
+
 	var err error
 
 	err = sdl.Init(sdl.INIT_VIDEO)
@@ -58,4 +78,27 @@ func (self *PPU) Draw(gfx *[32][64]byte) {
 	}
 
 	self.renderer.Present()
+}
+
+func (self *PPU) Poll(key *[16]bool) bool {
+	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+		switch eventType := event.(type) {
+		case *sdl.QuitEvent:
+			return true
+		case *sdl.KeyUpEvent:
+			//fmt.Println(eventType.Keysym.Scancode)
+			if _, ok := self.keypad[eventType.Keysym.Scancode]; ok {
+				key[self.keypad[eventType.Keysym.Scancode]] = true
+			}
+
+		case *sdl.KeyDownEvent:
+			//fmt.Println(eventType.Keysym.Scancode)
+			if _, ok := self.keypad[eventType.Keysym.Scancode]; ok {
+				key[self.keypad[eventType.Keysym.Scancode]] = false
+			}
+		}
+
+	}
+
+	return false
 }

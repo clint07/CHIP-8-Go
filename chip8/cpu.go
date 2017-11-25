@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"time"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type CPU struct {
@@ -22,6 +22,7 @@ type CPU struct {
 	ST byte // Sound timer
 
 	Key [16]bool
+	keypad map[sdl.Scancode]byte
 
 	RS int  // ROM Size: length of CHIP-8 program byte array
 	DF bool // Draw Flag
@@ -29,6 +30,24 @@ type CPU struct {
 
 func (self *CPU) Init() {
 	self.loadFont()
+
+	self.keypad = map[sdl.Scancode]byte {
+		sdl.SCANCODE_1: 0x1,
+		sdl.SCANCODE_2: 0x2,
+		sdl.SCANCODE_3: 0x3,
+		sdl.SCANCODE_4: 0x4,
+		sdl.SCANCODE_5: 0x5,
+		sdl.SCANCODE_6: 0x6,
+		sdl.SCANCODE_7: 0x7,
+		sdl.SCANCODE_8: 0x8,
+		sdl.SCANCODE_9: 0x9,
+		sdl.SCANCODE_0: 0x0,
+		sdl.SCANCODE_A: 0xA,
+		sdl.SCANCODE_B: 0xB,
+		sdl.SCANCODE_C: 0xB,
+		sdl.SCANCODE_D: 0xC,
+		sdl.SCANCODE_E: 0xD,
+		sdl.SCANCODE_F: 0xF}
 }
 
 func (self *CPU) loadFont() {
@@ -113,7 +132,7 @@ func (self *CPU) getOpCode(PC uint16) uint16 {
 	opCode := opCode1<<8 | opCode2
 
 	//fmt.Printf("1st OpCode: %X\n2nd OpCode: %X\n", opCode1, opCode2)
-	//fmt.Printf("OpCode: %X\n", opCode)
+	fmt.Printf("OpCode: %X\n", opCode)
 
 	return opCode
 }
@@ -128,8 +147,15 @@ func (self *CPU) Cycle() {
 		// Execute code
 		self.execute(opCode)
 
-		// Increment PC
+		// Increment PC and decrement DT & ST
 		self.PC += 2
+		if self.DT > 0 {
+			self.DT -= 1
+		}
+
+		if self.ST > 0 {
+			self.ST -= 1
+		}
 	}
 }
 
@@ -158,7 +184,7 @@ func (self *CPU) execute(opCode uint16) error {
 		self.call(nnn)
 
 	} else if (opCode & 0xF000) == 0x3000 {
-		// Instruction 3xkk: Skip next instructionif Vx = kk.
+		// Instruction 3xkk: Skip next instruction if Vx = kk.
 		self.skipIf(vx, kk)
 
 	} else if (opCode & 0xF000) == 0x4000 {
@@ -612,7 +638,7 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 	x := self.V[vx]
 	y := self.V[vy]
 
-	fmt.Printf("Coordinates: (%d, %d)\n", x, y)
+	//fmt.Printf("Coordinates: (%d, %d)\n", x, y)
 	for i := uint(0); i < uint(n); i++ {
 		value := self.RAM[self.I+i]
 
@@ -664,7 +690,7 @@ func (self *CPU) skipIfKey(vx byte) {
 		self.PC += 2
 	}
 
-	fmt.Printf("New PC: %d\tKey: %d\tPressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
+	//fmt.Printf("New PC: %d\tKey: %d\tPressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
@@ -697,9 +723,22 @@ func (self *CPU) loadXDT(vx byte) {
 func (self *CPU) loadKey(vx byte) {
 	fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
 	fmt.Printf("Vx: %X\n", vx)
-	fmt.Println("NOT YET IMPLEMENTED")
-	fmt.Println("Maybe use a goroutine?")
-	time.Sleep(100*time.Second)
+
+	wait := true
+
+	for wait {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch eventType := event.(type) {
+			case *sdl.KeyUpEvent:
+				if _, ok := self.keypad[eventType.Keysym.Scancode]; ok {
+					self.V[vx] = self.keypad[eventType.Keysym.Scancode]
+					wait = false
+				}
+			}
+		}
+	}
+
+	fmt.Println("I AM OUT")
 }
 
 // Instruction Fx15: Set delay timer = Vx.

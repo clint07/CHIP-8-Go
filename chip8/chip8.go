@@ -1,5 +1,10 @@
 package CHIP8
 
+//import (
+//	"github.com/veandco/go-sdl2/sdl"
+//	"fmt"
+//)
+
 type Chip8 struct {
 	cpu *CPU
 	ppu *PPU
@@ -45,8 +50,13 @@ func (self *Chip8) Run() {
 			// Don't forget to set the draw flag back
 			self.cpu.DF = false
 		}
+
+		if exit := self.ppu.Poll(&self.cpu.Key); exit {
+			break
+		}
 	}
 }
+
 
 func (self *Chip8) Shutdown() {
 	self.ppu.destroy()
