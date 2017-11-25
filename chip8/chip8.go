@@ -51,6 +51,7 @@ func (self *Chip8) Run() {
 			self.cpu.DF = false
 		}
 
+		// Check keyboard input
 		if exit := self.ppu.Poll(&self.cpu.Key); exit {
 			break
 		}

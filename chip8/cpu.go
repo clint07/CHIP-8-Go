@@ -21,7 +21,7 @@ type CPU struct {
 	DT byte // Delay timer
 	ST byte // Sound timer
 
-	Key [16]bool
+	Key [16]byte
 	keypad map[sdl.Scancode]byte
 
 	RS int  // ROM Size: length of CHIP-8 program byte array
@@ -44,9 +44,9 @@ func (self *CPU) Init() {
 		sdl.SCANCODE_0: 0x0,
 		sdl.SCANCODE_A: 0xA,
 		sdl.SCANCODE_B: 0xB,
-		sdl.SCANCODE_C: 0xB,
-		sdl.SCANCODE_D: 0xC,
-		sdl.SCANCODE_E: 0xD,
+		sdl.SCANCODE_C: 0xC,
+		sdl.SCANCODE_D: 0xD,
+		sdl.SCANCODE_E: 0xE,
 		sdl.SCANCODE_F: 0xF}
 }
 
@@ -132,7 +132,7 @@ func (self *CPU) getOpCode(PC uint16) uint16 {
 	opCode := opCode1<<8 | opCode2
 
 	//fmt.Printf("1st OpCode: %X\n2nd OpCode: %X\n", opCode1, opCode2)
-	fmt.Printf("OpCode: %X\n", opCode)
+	//fmt.Printf("OpCode: %X\n", opCode)
 
 	return opCode
 }
@@ -682,11 +682,11 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 // Checks the keyboard, and if the key corresponding to the value of Vx is currently
 // in the down position, PC is increased by 2.
 func (self *CPU) skipIfKey(vx byte) {
-	fmt.Println("Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.")
-	fmt.Printf("Vx: %X\n", vx)
+	//fmt.Println("Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.")
+	//fmt.Printf("Vx: %X\n", vx)
 
 	// If the key is pressed
-	if self.Key[self.V[vx]] {
+	if self.Key[self.V[vx]] == 1{
 		self.PC += 2
 	}
 
@@ -697,11 +697,11 @@ func (self *CPU) skipIfKey(vx byte) {
 // Checks the keyboard, and if the key corresponding to the value of Vx is currently
 // in the up position, PC is increased by 2.
 func (self *CPU) skipIfKeyNot(vx byte) {
-	fmt.Println("Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.")
-	fmt.Printf("Vx: %X\n", vx)
+	//fmt.Println("Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.")
+	//fmt.Printf("Vx: %X\n", vx)
 
 	// If the key isn't pressed
-	if !self.Key[self.V[vx]] {
+	if self.Key[self.V[vx]] == 0{
 		self.PC += 2
 	}
 
@@ -721,15 +721,15 @@ func (self *CPU) loadXDT(vx byte) {
 // Instruction Fx0A: Wait for a key press, store the value of the key in Vx.
 // All execution stops until a key is pressed, then the value of that key is stored in Vx.
 func (self *CPU) loadKey(vx byte) {
-	fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
-	fmt.Printf("Vx: %X\n", vx)
+	//fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
+	//fmt.Printf("Vx: %X\n", vx)
 
 	wait := true
 
 	for wait {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch eventType := event.(type) {
-			case *sdl.KeyUpEvent:
+			case *sdl.KeyDownEvent:
 				if _, ok := self.keypad[eventType.Keysym.Scancode]; ok {
 					self.V[vx] = self.keypad[eventType.Keysym.Scancode]
 					wait = false

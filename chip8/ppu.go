@@ -3,6 +3,7 @@ package CHIP8
 import (
 	"github.com/veandco/go-sdl2/sdl"
 	//"fmt"
+	"fmt"
 )
 
 type PPU struct {
@@ -31,9 +32,9 @@ func (self *PPU) Init() error {
 		sdl.SCANCODE_0: 0x0,
 		sdl.SCANCODE_A: 0xA,
 		sdl.SCANCODE_B: 0xB,
-		sdl.SCANCODE_C: 0xB,
-		sdl.SCANCODE_D: 0xC,
-		sdl.SCANCODE_E: 0xD,
+		sdl.SCANCODE_C: 0xC,
+		sdl.SCANCODE_D: 0xD,
+		sdl.SCANCODE_E: 0xE,
 		sdl.SCANCODE_F: 0xF}
 
 	var err error
@@ -80,21 +81,22 @@ func (self *PPU) Draw(gfx *[32][64]byte) {
 	self.renderer.Present()
 }
 
-func (self *PPU) Poll(key *[16]bool) bool {
+func (self *PPU) Poll(key *[16]byte) bool {
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch eventType := event.(type) {
 		case *sdl.QuitEvent:
 			return true
+
 		case *sdl.KeyUpEvent:
-			//fmt.Println(eventType.Keysym.Scancode)
-			if _, ok := self.keypad[eventType.Keysym.Scancode]; ok {
-				key[self.keypad[eventType.Keysym.Scancode]] = true
+			if unpressed, ok := self.keypad[eventType.Keysym.Scancode]; ok {
+				fmt.Printf("Unpressed %X\n", unpressed)
+				key[unpressed] = 0
 			}
 
 		case *sdl.KeyDownEvent:
-			//fmt.Println(eventType.Keysym.Scancode)
-			if _, ok := self.keypad[eventType.Keysym.Scancode]; ok {
-				key[self.keypad[eventType.Keysym.Scancode]] = false
+			if pressed, ok := self.keypad[eventType.Keysym.Scancode]; ok {
+				fmt.Printf("Pressed %X\n", pressed)
+				key[pressed] = 1
 			}
 		}
 
