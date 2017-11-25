@@ -36,10 +36,15 @@ func (self *Chip8) Run() {
 	for i := 0; i < 30000; i++ {
 		// Emulate a cycle
 		self.cpu.Cycle()
-		// Check draw flag
-		// Draw
 
-		// Record key press
+		// Check draw flag
+		if self.cpu.DF {
+			// Draw
+			self.ppu.Draw(&self.cpu.GFX)
+
+			// Don't forget to
+			self.cpu.DF = false
+		}
 	}
 }
 

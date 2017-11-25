@@ -107,6 +107,7 @@ func (self *CPU) printRegisters() {
 // RAM[PC + 1] = 0xFE (1 byte)
 // opcode = RAM[PC] + RAM[PC + 1] = 0x01FE
 func (self *CPU) getOpCode(PC uint16) uint16 {
+	fmt.Println(PC)
 	opCode1 := uint16(self.RAM[PC])
 	opCode2 := uint16(self.RAM[PC+1])
 	opCode := opCode1<<8 | opCode2

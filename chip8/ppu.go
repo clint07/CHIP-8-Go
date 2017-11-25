@@ -40,3 +40,7 @@ func (self *PPU) destroy() {
 	self.window.Destroy()
 	sdl.Quit()
 }
+
+func (self *PPU) Draw(gfx *[32][64]byte) {
+
+}
