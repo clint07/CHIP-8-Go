@@ -33,7 +33,7 @@ func (self *Chip8) Run() {
 	self.cpu.printRAM()
 
 	// Run ROM
-	for i := 0; i < 30000; i++ {
+	for {
 		// Emulate a cycle
 		self.cpu.Cycle()
 
@@ -42,7 +42,7 @@ func (self *Chip8) Run() {
 			// Draw
 			self.ppu.Draw(&self.cpu.GFX)
 
-			// Don't forget to
+			// Don't forget to set the draw flag back
 			self.cpu.DF = false
 		}
 	}

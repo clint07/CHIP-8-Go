@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"time"
 )
 
 type CPU struct {
@@ -107,7 +108,6 @@ func (self *CPU) printRegisters() {
 // RAM[PC + 1] = 0xFE (1 byte)
 // opcode = RAM[PC] + RAM[PC + 1] = 0x01FE
 func (self *CPU) getOpCode(PC uint16) uint16 {
-	fmt.Println(PC)
 	opCode1 := uint16(self.RAM[PC])
 	opCode2 := uint16(self.RAM[PC+1])
 	opCode := opCode1<<8 | opCode2
@@ -121,15 +121,16 @@ func (self *CPU) getOpCode(PC uint16) uint16 {
 func (self *CPU) Cycle() {
 	// Debug
 	//self.printRegisters()
+	if self.PC < 4094 {
+		// Get opcode
+		opCode := self.getOpCode(self.PC)
 
-	// Get opcode
-	opCode := self.getOpCode(self.PC)
+		// Execute code
+		self.execute(opCode)
 
-	// Execute code
-	self.execute(opCode)
-
-	// Increment PC
-	self.PC += 2
+		// Increment PC
+		self.PC += 2
+	}
 }
 
 func (self *CPU) execute(opCode uint16) error {
@@ -605,8 +606,8 @@ func (self *CPU) rand(vx byte, kk byte) {
 // See instruction 8xy3 for more information on XOR, and section 2.4, Display,
 // for more information on the Chip-8 screen and sprites.
 func (self *CPU) draw(vx byte, vy byte, n byte) {
-	fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
-	fmt.Printf("Vx: %X\tVy: %X\tn: %X\n", vx, vy, n)
+	//fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
+	//fmt.Printf("Vx: %X\tVy: %X\tn: %X\n", vx, vy, n)
 
 	x := self.V[vx]
 	y := self.V[vy]
@@ -614,12 +615,16 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 	fmt.Printf("Coordinates: (%d, %d)\n", x, y)
 	for i := uint(0); i < uint(n); i++ {
 		value := self.RAM[self.I+i]
-		fmt.Printf("%b", value)
+
 		for j := uint(0); j < 8; j++ {
 			//fmt.Printf("%b", )
 
+			//if x+byte(j) > 63 {
+			//	j = 0
+			//}
+
 			if value & (0x80 >> j) != 0 {
-				fmt.Printf("(%d,%d): %b\t", x+byte(j), y+byte(i), 1)
+				//fmt.Printf("(%d,%d): %b\t", x+byte(j), y+byte(i), 1)
 				//fmt.Printf("%d", 1)
 				if self.GFX[y+byte(i)][x + byte(j)] == 1 {
 					self.V[0xF] = 1
@@ -627,22 +632,22 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 
 				self.GFX[y+byte(i)][x + byte(j)] ^= 1
 			} else {
-				fmt.Printf("(%d,%d): %b\t", x+byte(i), y+byte(j), 0)
+				//fmt.Printf("(%d,%d): %b\t", x+byte(i), y+byte(j), 0)
 				//fmt.Printf(" ")
 			}
 		}
-		fmt.Println()
+		//fmt.Println()
 	}
 
 	//fmt.Print(self.GFX)
 	//fmt.Println("GFX\n\n\n\n\n")
-	for i := 0; i < 32; i++ {
-		for j := 0; j < 64; j++ {
-			fmt.Printf("%d", self.GFX[i][j])
-		}
-		fmt.Println()
-	}
-
+	//for i := 0; i < 32; i++ {
+	//	for j := 0; j < 64; j++ {
+	//		fmt.Printf("%d", self.GFX[i][j])
+	//	}
+	//	fmt.Println()
+	//}
+	//
 	//fmt.Printf("%b\n", mem)
 	self.DF = true
 }
@@ -674,7 +679,7 @@ func (self *CPU) skipIfKeyNot(vx byte) {
 		self.PC += 2
 	}
 
-	fmt.Printf("New PC: %d\tKey: %d\tNot Pressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
+	//fmt.Printf("New PC: %d\tKey: %d\tNot Pressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
@@ -694,6 +699,7 @@ func (self *CPU) loadKey(vx byte) {
 	fmt.Printf("Vx: %X\n", vx)
 	fmt.Println("NOT YET IMPLEMENTED")
 	fmt.Println("Maybe use a goroutine?")
+	time.Sleep(100*time.Second)
 }
 
 // Instruction Fx15: Set delay timer = Vx.

@@ -28,6 +28,7 @@ func (self *PPU) Init() error {
 		return err
 	}
 
+	self.renderer.SetScale(10, 10)
 	rect := sdl.Rect{0, 0, width, height}
 	self.renderer.SetDrawColor(0, 0, 0, 1)
 	self.renderer.FillRect(&rect)
@@ -42,5 +43,19 @@ func (self *PPU) destroy() {
 }
 
 func (self *PPU) Draw(gfx *[32][64]byte) {
+	for i := 0; i < 32; i++ {
+		for j := 0; j < 64; j++ {
+			pixel := gfx[i][j]
 
+			if pixel == 0 {
+				self.renderer.SetDrawColor(0, 0, 0, 1)
+			} else {
+				self.renderer.SetDrawColor(255, 255, 255, 1)
+			}
+
+			self.renderer.DrawPoint(j, i)
+		}
+	}
+
+	self.renderer.Present()
 }
