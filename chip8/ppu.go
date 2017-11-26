@@ -2,8 +2,6 @@ package CHIP8
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
-	//"fmt"
-	"fmt"
 )
 
 type PPU struct {
@@ -89,13 +87,13 @@ func (self *PPU) Poll(key *[16]byte) bool {
 
 		case *sdl.KeyUpEvent:
 			if unpressed, ok := self.keypad[eventType.Keysym.Scancode]; ok {
-				fmt.Printf("Unpressed %X\n", unpressed)
+				//fmt.Printf("Unpressed %X\n", unpressed)
 				key[unpressed] = 0
 			}
 
 		case *sdl.KeyDownEvent:
 			if pressed, ok := self.keypad[eventType.Keysym.Scancode]; ok {
-				fmt.Printf("Pressed %X\n", pressed)
+				//fmt.Printf("Pressed %X\n", pressed)
 				key[pressed] = 1
 			}
 		}

@@ -68,9 +68,7 @@ func (self *CPU) loadFont() {
 		0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		0xF0, 0x80, 0xF0, 0x80, 0x80} // F
 
-		for i, font := range fonts {
-			self.RAM[i] = font
-		}
+		copy(self.RAM[:], fonts[:])
 }
 
 func (self *CPU) LoadROM(filename *string) error {
@@ -131,7 +129,7 @@ func (self *CPU) getOpCode(PC uint16) uint16 {
 	opCode2 := uint16(self.RAM[PC+1])
 	opCode := opCode1<<8 | opCode2
 
-	//fmt.Printf("1st OpCode: %X\n2nd OpCode: %X\n", opCode1, opCode2)
+	//fmt.Printf("1st OpCode: %X\t2nd OpCode: %X\t", opCode1, opCode2)
 	//fmt.Printf("OpCode: %X\n", opCode)
 
 	return opCode
@@ -191,8 +189,8 @@ func (self *CPU) execute(opCode uint16) error {
 		// Instruction 4xkk: Skip next instruction if Vx != kk.
 		self.skipIfNot(vx, kk)
 
-	} else if (opCode & 0xF000) == 0x5000 {
-		// Instruction 5xy0: Skip next isntruction if Vx = Vy.
+	} else if (opCode & 0xF00F) == 0x5000 {
+		// Instruction 5xy0: Skip next instruction if Vx = Vy.
 		self.skipIfXY(vx, vy)
 
 	} else if (opCode & 0xF000) == 0x6000 {
@@ -205,6 +203,7 @@ func (self *CPU) execute(opCode uint16) error {
 
 	} else if (opCode & 0xF00F) == 0x8000 {
 		// Instruction 8xy0: Set Vx = Vy.
+		fmt.Printf("UHM 8X000: %X\n", opCode)
 		self.loadXY(vx, vy)
 
 	} else if (opCode & 0xF00F) == 0x8001 {
@@ -235,7 +234,7 @@ func (self *CPU) execute(opCode uint16) error {
 		// Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.
 		self.subYX(vx, vy)
 
-	} else if (opCode & 0xF00F) == 0x8000 {
+	} else if (opCode & 0xF00F) == 0x800E {
 		// Instruction 8xyE: Set Vx = Vx SHL 1.
 		self.shiftLeft(vx)
 
@@ -305,7 +304,7 @@ func (self *CPU) execute(opCode uint16) error {
 		self.loadV(vx)
 
 	} else {
-		fmt.Errorf("Unknown instruction: %X\n\n", opCode)
+		fmt.Errorf("Unknown instruction: %X\n", opCode)
 	}
 
 	return nil
@@ -331,7 +330,7 @@ func (self *CPU) ret() error {
 
 	// Decrement stack pointer and error if it's below 0.
 	if self.SP -= 1; self.SP < 0 {
-		return fmt.Errorf("stack pointer out of bounds: %d", self.SP)
+		fmt.Printf("stack pointer out of bounds: %d", self.SP)
 	}
 
 	self.PC = self.Stack[self.SP]
@@ -363,7 +362,7 @@ func (self *CPU) call(nnn uint16) error {
 
 	// Increment stack pointer and error if it's above it's length
 	if self.SP += 1; self.SP > uint16(len(self.Stack)) {
-		fmt.Errorf("stack pointer out of points: %d", self.SP)
+		fmt.Printf("stack pointer out of points: %d", self.SP)
 	}
 
 	//fmt.Printf("New Stack: %v\nnew SP: %d\tPC: %d\n", self.Stack, self.SP, self.PC)
@@ -405,7 +404,7 @@ func (self *CPU) skipIfXY(vx byte, vy byte) {
 	//fmt.Println("Instruction 5xy0: Skip next isntruction if Vx = Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
-	if vx == vy {
+	if self.V[vx] == self.V[vy] {
 		self.PC += 2
 	}
 
@@ -447,7 +446,7 @@ func (self *CPU) loadXY(vx byte, vy byte) {
 
 // Instruction 8xy1: Set Vx = Vx OR Vy.
 // Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx.
-// A bitwise OR compares the corrseponding bits from two values, and if either bit is 1,
+// A bitwise OR compares the corresponding bits from two values, and if either bit is 1,
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func (self *CPU) orXY(vx byte, vy byte) {
 	//fmt.Println("Instruction 8xy1: Set Vx = Vx | Vy.")
@@ -460,7 +459,7 @@ func (self *CPU) orXY(vx byte, vy byte) {
 
 // Instruction 8xy2: Set Vx = Vx AND Vy.
 // Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
-// A bitwise AND compares the corrseponding bits from two values, and if both bits are 1,
+// A bitwise AND compares the corresponding bits from two values, and if both bits are 1,
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func (self *CPU) andXY(vx byte, vy byte) {
 	//fmt.Println("Instruction 8xy2: Set Vx = Vx & Vy.")
@@ -493,6 +492,7 @@ func (self *CPU) addXY(vx byte, vy byte) {
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	num := uint(self.V[vx]) + uint(self.V[vy])
+
 	if num > 255 {
 		self.V[0xF] = 1
 	} else {
@@ -517,7 +517,7 @@ func (self *CPU) subXY(vx byte, vy byte) {
 		self.V[0xF] = 0
 	}
 
-	self.V[vx] = self.V[vx] + self.V[vy]
+	self.V[vx] = self.V[vx] - self.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
 }
@@ -544,7 +544,7 @@ func (self *CPU) subYX(vx byte, vy byte) {
 	//fmt.Println("Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
-	if vy > vx {
+	if self.V[vy] > self.V[vx] {
 		self.V[0xF] = 1
 	} else {
 		self.V[0xF] = 0
@@ -560,10 +560,10 @@ func (self *CPU) subYX(vx byte, vy byte) {
 // Then Vx is multiplied by 2.
 func (self *CPU) shiftLeft(vx byte) {
 	//fmt.Println("Instruction 8xyE: Set Vx = Vx SHL 1.")
-	//fmt.Printf("Vx: %X\n", vx)
+	//fmt.Printf("VX: %X\n", self.V[vx])
 
 	// Get the most significant bit in a byte
-	self.V[0xF] = self.V[vx] >> 7
+	self.V[0xF] = (self.V[vx] >> 7) & 0x1
 
 	// Multiple by 2
 	self.V[vx] = self.V[vx] << 1
@@ -615,7 +615,7 @@ func (self *CPU) rand(vx byte, kk byte) {
 	//fmt.Println("Instruction Cxkk: Set Vx = random byte AND kk.")
 	//fmt.Printf("Vx: %X\n", vx)
 
-	r := byte(rand.Intn(256))
+	r := byte(rand.Intn(0xFF))
 	self.V[vx] = kk & r
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
@@ -638,16 +638,12 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 	x := self.V[vx]
 	y := self.V[vy]
 
-	//fmt.Printf("Coordinates: (%d, %d)\n", x, y)
+	fmt.Printf("Coordinates: (%d, %d)\n", x, y)
 	for i := uint(0); i < uint(n); i++ {
 		value := self.RAM[self.I+i]
 
 		for j := uint(0); j < 8; j++ {
 			//fmt.Printf("%b", )
-
-			//if x+byte(j) > 63 {
-			//	j = 0
-			//}
 
 			if value & (0x80 >> j) != 0 {
 				//fmt.Printf("(%d,%d): %b\t", x+byte(j), y+byte(i), 1)
@@ -795,7 +791,7 @@ func (self *CPU) loadBCD(vx byte) {
 
 	dec := self.V[vx]
 
-	for i := 2; i >= 0; i--{
+	for i := 2; i >= 0; i-- {
 		self.RAM[self.I+uint(i)] = byte(dec % 10)
 		dec /= 10
 	}
