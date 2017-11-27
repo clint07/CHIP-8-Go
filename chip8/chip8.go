@@ -1,9 +1,6 @@
 package CHIP8
 
-//import (
-//	"github.com/veandco/go-sdl2/sdl"
-//	"fmt"
-//)
+import "time"
 
 type Chip8 struct {
 	cpu *CPU
@@ -36,24 +33,29 @@ func (self *Chip8) Load(filename *string) error {
 func (self *Chip8) Run() {
 	// Print ROM for sanity sake
 	self.cpu.printRAM()
+	tick := time.Tick(5 * time.Millisecond)
 
 	// Run ROM
 	for {
-		// Emulate a cycle
-		self.cpu.Cycle()
+		select {
+			case <- tick:
 
-		// Check draw flag
-		if self.cpu.DF {
-			// Draw
-			self.ppu.Draw(&self.cpu.GFX)
+			// Emulate a cycle
+			self.cpu.Cycle()
 
-			// Don't forget to set the draw flag back
-			self.cpu.DF = false
-		}
+			// Check draw flag
+			if self.cpu.DF {
+				// Draw
+				self.ppu.Draw(&self.cpu.GFX)
 
-		// Check keyboard input
-		if exit := self.ppu.Poll(&self.cpu.Key); exit {
-			break
+				// Don't forget to set the draw flag back
+				self.cpu.DF = false
+			}
+
+			// Check keyboard input
+			if exit := self.ppu.Poll(&self.cpu.Key); exit {
+				break
+			}
 		}
 	}
 }

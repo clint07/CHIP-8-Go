@@ -349,9 +349,7 @@ func (self *CPU) jump(nnn uint16) {
 	fmt.Println("Instruction 1nnn: Jump to location nnn.")
 	//fmt.Printf("nnn: %d\n", nnn)
 
-	fmt.Printf("PC: %d\tNNN: %X\t", self.PC, nnn)
 	self.PC = nnn
-	fmt.Printf("NEW PC: %d\n", self.PC)
 
 	//fmt.Printf("New PC: %d\n", self.PC)
 }
