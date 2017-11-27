@@ -130,7 +130,10 @@ func (self *CPU) getOpCode(PC uint16) uint16 {
 	opCode := opCode1<<8 | opCode2
 
 	//fmt.Printf("1st OpCode: %X\t2nd OpCode: %X\t", opCode1, opCode2)
-	//fmt.Printf("OpCode: %X\n", opCode)
+	if opCode != 0 {
+		self.printRegisters()
+		fmt.Printf("PC: %d\tOpCode: %X\n", self.PC, opCode)
+	}
 
 	return opCode
 }
@@ -146,7 +149,7 @@ func (self *CPU) Cycle() {
 		self.execute(opCode)
 
 		// Increment PC and decrement DT & ST
-		self.PC += 2
+
 		if self.DT > 0 {
 			self.DT -= 1
 		}
@@ -312,21 +315,22 @@ func (self *CPU) execute(opCode uint16) error {
 
 // Instruction 00E0: Clear the display.
 func (self *CPU) clear() {
-	//fmt.Println("Instruction 00E0: Clear the display.")
+	fmt.Println("Instruction 00E0: Clear the display.")
 
 	// Zero out gfx
 	self.GFX = [32][64]byte{}
 
-
 	// Set draw flag
 	self.DF = true
+
+	self.PC += 2
 }
 
 // Instruction 00EE: Return from a subroutine.
 // The CPU sets the program counter to the address at the top of the stack,
 // then subtracts 1 from the stack pointer.
 func (self *CPU) ret() error {
-	//fmt.Println("Instruction 00EE: Return from a subroutine.")
+	fmt.Println("Instruction 00EE: Return from a subroutine.")
 
 	// Decrement stack pointer and error if it's below 0.
 	if self.SP -= 1; self.SP < 0 {
@@ -334,7 +338,7 @@ func (self *CPU) ret() error {
 	}
 
 	self.PC = self.Stack[self.SP]
-
+	self.PC += 2
 	//fmt.Printf("New PC: %d", self.PC)
 	return nil
 }
@@ -342,10 +346,12 @@ func (self *CPU) ret() error {
 // Instruction 1nnn: Jump to location nnn.
 // The CPU sets the program counter to nnn.
 func (self *CPU) jump(nnn uint16) {
-	//fmt.Println("Instruction 1nnn: Jump to location nnn.")
+	fmt.Println("Instruction 1nnn: Jump to location nnn.")
 	//fmt.Printf("nnn: %d\n", nnn)
 
+	fmt.Printf("PC: %d\tNNN: %X\t", self.PC, nnn)
 	self.PC = nnn
+	fmt.Printf("NEW PC: %d\n", self.PC)
 
 	//fmt.Printf("New PC: %d\n", self.PC)
 }
@@ -354,7 +360,7 @@ func (self *CPU) jump(nnn uint16) {
 // The CPU increments the stack pointer, then puts the current PC on the top of the stack.
 // The PC is then set to nnn.
 func (self *CPU) call(nnn uint16) error {
-	//fmt.Println("Instruction 2nnn: Call subroutine at nnn.")
+	fmt.Println("Instruction 2nnn: Call subroutine at nnn.")
 	//fmt.Printf("nnn: %d\n", nnn)
 
 	self.Stack[self.SP] = self.PC
@@ -373,7 +379,7 @@ func (self *CPU) call(nnn uint16) error {
 // The CPU compares register Vx to kk, and if they are equal,
 // increments the program counter by 2.
 func (self *CPU) skipIf(vx byte, kk byte) {
-	//fmt.Println("Instruction 3xkk: Skip next instruction if Vx == kk.")
+	fmt.Println("Instruction 3xkk: Skip next instruction if Vx == kk.")
 	//fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 
 	if self.V[vx] == kk {
@@ -381,13 +387,14 @@ func (self *CPU) skipIf(vx byte, kk byte) {
 	}
 
 	//fmt.Printf("New PC: %d\n", self.PC)
+	self.PC += 2
 }
 
 // Instruction 4xkk: Skip next instruction if Vx != kk.
 // The CPU compares register Vx to kk, and if they are not equal,
 // increments the program counter by 2.
 func (self *CPU) skipIfNot(vx byte, kk byte) {
-	//fmt.Println("Instruction 4xkk: Skip next instruction if Vx != kk.")
+	fmt.Println("Instruction 4xkk: Skip next instruction if Vx != kk.")
 	//fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 
 	if self.V[vx] != kk {
@@ -395,13 +402,14 @@ func (self *CPU) skipIfNot(vx byte, kk byte) {
 	}
 
 	//fmt.Printf("New PC: %d\n", self.PC)
+	self.PC += 2
 }
 
 // Instruction 5xy0: Skip next instruction if Vx = Vy.
 // The CPU compares register Vx to register Vy, and if they are equal,
 // increments the program counter by 2.
 func (self *CPU) skipIfXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 5xy0: Skip next isntruction if Vx = Vy.")
+	fmt.Println("Instruction 5xy0: Skip next isntruction if Vx = Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	if self.V[vx] == self.V[vy] {
@@ -409,39 +417,43 @@ func (self *CPU) skipIfXY(vx byte, vy byte) {
 	}
 
 	//fmt.Printf("New PC: %d\n", self.PC)
+	self.PC += 2
 }
 
 // Instruction 6xkk: Set Vx = kk.
 // The CPU puts the value kk into register Vx.
 func (self *CPU) load(vx byte, kk byte) {
-	//fmt.Println("Instruction 6xkk: Set Vx = kk.")
+	fmt.Println("Instruction 6xkk: Set Vx = kk.")
 	//fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 
 	self.V[vx] = kk
 
 	//fmt.Printf("New V%X: %X\n", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 7xkk: Set Vx = Vx + kk.
 // Adds the value kk to the value of register Vx, then stores the result in Vx.
 func (self *CPU) add(vx byte, kk byte) {
-	//fmt.Println("Instruction 7xkk: Set Vx = Vx + kk.")
+	fmt.Println("Instruction 7xkk: Set Vx = Vx + kk.")
 	//fmt.Printf("Vx: %X\tkk: %X\n", vx, kk)
 
 	self.V[vx] += kk
 
 	//fmt.Printf("New V%X: %X\n", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy0: Set Vx = Vy.
 // Stores the value of register Vy in register Vx.
 func (self *CPU) loadXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy0: Set Vx = Vy.")
+	fmt.Println("Instruction 8xy0: Set Vx = Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	self.V[vx] = self.V[vy]
 
 	//fmt.Printf("New V%X: %X\n", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy1: Set Vx = Vx OR Vy.
@@ -449,12 +461,13 @@ func (self *CPU) loadXY(vx byte, vy byte) {
 // A bitwise OR compares the corresponding bits from two values, and if either bit is 1,
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func (self *CPU) orXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy1: Set Vx = Vx | Vy.")
+	fmt.Println("Instruction 8xy1: Set Vx = Vx | Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	self.V[vx] = self.V[vx] | self.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy2: Set Vx = Vx AND Vy.
@@ -462,12 +475,13 @@ func (self *CPU) orXY(vx byte, vy byte) {
 // A bitwise AND compares the corresponding bits from two values, and if both bits are 1,
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func (self *CPU) andXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy2: Set Vx = Vx & Vy.")
+	fmt.Println("Instruction 8xy2: Set Vx = Vx & Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	self.V[vx] = self.V[vx] & self.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy3: Set Vx = Vx XOR Vy.
@@ -476,19 +490,20 @@ func (self *CPU) andXY(vx byte, vy byte) {
 // and if the bits are not both the same, then the corresponding bit in the result is set to 1.
 // Otherwise, it is 0.
 func (self *CPU) xorXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy3: Set Vx = Vx ^ Vy.")
+	fmt.Println("Instruction 8xy3: Set Vx = Vx ^ Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	self.V[vx] = self.V[vx] ^ self.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.
 // The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,)
 // VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
 func (self *CPU) addXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.")
+	fmt.Println("Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	num := uint(self.V[vx]) + uint(self.V[vy])
@@ -502,13 +517,14 @@ func (self *CPU) addXY(vx byte, vy byte) {
 	self.V[vx] = byte(num)
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.
 // If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
 // and the results stored in Vx.
 func (self *CPU) subXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.")
+	fmt.Println("Instruction 8xy5: Set Vx = Vx - Vy, set VF = NOT borrow.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	if self.V[vx] > self.V[vy] {
@@ -520,13 +536,14 @@ func (self *CPU) subXY(vx byte, vy byte) {
 	self.V[vx] = self.V[vx] - self.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction 8xy6: Set Vx = Vx SHR 1.
 // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
 // Then Vx is divided by 2.
 func (self *CPU) shiftRight(vx byte) {
-	//fmt.Println("Instruction 8xy6: Set Vx = Vx SHR 1.")
+	fmt.Println("Instruction 8xy6: Set Vx = Vx SHR 1.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	self.V[0xF] = self.V[vx] & 0x1
@@ -535,13 +552,14 @@ func (self *CPU) shiftRight(vx byte) {
 	self.V[vx] = self.V[vx] >> 1
 
 	//fmt.Printf("New V%X: %X\tVF: %X", vx, self.V[vx], self.V[0xF])
+	self.PC += 2
 }
 
 // Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.
 // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
 // and the results stored in Vx.
 func (self *CPU) subYX(vx byte, vy byte) {
-	//fmt.Println("Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.")
+	fmt.Println("Instruction 8xy7: Set Vx = Vy - Vx, set VF = NOT borrow.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	if self.V[vy] > self.V[vx] {
@@ -553,13 +571,14 @@ func (self *CPU) subYX(vx byte, vy byte) {
 	self.V[vx] = self.V[vy] - self.V[vx]
 
 	//fmt.Printf("New V%X: %d\tVF: %d\n", vx, self.V[vx], self.V[0xF])
+	self.PC += 2
 }
 
 // Instruction 8xyE: Set Vx = Vx SHL 1.
 // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
 // Then Vx is multiplied by 2.
 func (self *CPU) shiftLeft(vx byte) {
-	//fmt.Println("Instruction 8xyE: Set Vx = Vx SHL 1.")
+	fmt.Println("Instruction 8xyE: Set Vx = Vx SHL 1.")
 	//fmt.Printf("VX: %X\n", self.V[vx])
 
 	// Get the most significant bit in a byte
@@ -569,13 +588,14 @@ func (self *CPU) shiftLeft(vx byte) {
 	self.V[vx] = self.V[vx] << 1
 
 	//fmt.Printf("New V%X: %d\tVF: %d\n", vx, self.V[vx], self.V[0xF])
+	self.PC += 2
 }
 
 // Instruction 9xy0: Skip next instruction if Vx != Vy.
 // The values of Vx and Vy are compared, and if they are not equal,
 // the program counter is increased by 2.
 func (self *CPU) skipIfNotXY(vx byte, vy byte) {
-	//fmt.Println("Instruction 9xy0: Skip next instruction if Vx != Vy.")
+	fmt.Println("Instruction 9xy0: Skip next instruction if Vx != Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
 	if self.V[vx] != self.V[vy] {
@@ -583,23 +603,25 @@ func (self *CPU) skipIfNotXY(vx byte, vy byte) {
 	}
 
 	//fmt.Printf("New PC: %d\n", self.PC)
+	self.PC += 2
 }
 
 // Instruction Annn: Set I = nnn.
 // The value of register I is set to nnn.
 func (self *CPU) loadI(nnn uint16) {
-	//fmt.Println("Instruction Annn: Set I = nnnn.")
+	fmt.Println("Instruction Annn: Set I = nnnn.")
 	//fmt.Printf("nnn: %X\n", nnn)
 
 	self.I = uint(nnn)
 
 	//fmt.Printf("New I: %X", self.I)
+	self.PC += 2
 }
 
 // Instruction Bnnn: Jump to location nnn + V0.
 // The program counter is set to nnn plus the value of V0.
 func (self *CPU) jumpV0(nnn uint16) {
-	//fmt.Println("Instruction Bnnn: Jump to location nnn + V0.")
+	fmt.Println("Instruction Bnnn: Jump to location nnn + V0.")
 	//fmt.Printf("nnn: %X\n", nnn)
 
 	self.PC = uint16(self.V[0x0]) + nnn
@@ -612,13 +634,14 @@ func (self *CPU) jumpV0(nnn uint16) {
 // which is then ANDed with the value kk. The results are stored in Vx.
 // See instruction 8xy2 for more information on AND.
 func (self *CPU) rand(vx byte, kk byte) {
-	//fmt.Println("Instruction Cxkk: Set Vx = random byte AND kk.")
+	fmt.Println("Instruction Cxkk: Set Vx = random byte AND kk.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	r := byte(rand.Intn(0xFF))
 	self.V[vx] = kk & r
 
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction Dxyn: Display n-byte sprite starting at memory location I at (Vx, Vy),
@@ -632,7 +655,7 @@ func (self *CPU) rand(vx byte, kk byte) {
 // See instruction 8xy3 for more information on XOR, and section 2.4, Display,
 // for more information on the Chip-8 screen and sprites.
 func (self *CPU) draw(vx byte, vy byte, n byte) {
-	//fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
+	fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
 	//fmt.Printf("Vx: %X\tVy: %X\tn: %X\n", vx, vy, n)
 
 	x := self.V[vx]
@@ -672,13 +695,14 @@ func (self *CPU) draw(vx byte, vy byte, n byte) {
 	//
 	//fmt.Printf("%b\n", mem)
 	self.DF = true
+	self.PC += 2
 }
 
 // Instruction Ex9E: Skip next instruction if key with the value of Vx is pressed.
 // Checks the keyboard, and if the key corresponding to the value of Vx is currently
 // in the down position, PC is increased by 2.
 func (self *CPU) skipIfKey(vx byte) {
-	//fmt.Println("Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.")
+	fmt.Println("Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	// If the key is pressed
@@ -687,13 +711,14 @@ func (self *CPU) skipIfKey(vx byte) {
 	}
 
 	//fmt.Printf("New PC: %d\tKey: %d\tPressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
+	self.PC += 2
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
 // Checks the keyboard, and if the key corresponding to the value of Vx is currently
 // in the up position, PC is increased by 2.
 func (self *CPU) skipIfKeyNot(vx byte) {
-	//fmt.Println("Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.")
+	fmt.Println("Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	// If the key isn't pressed
@@ -702,22 +727,24 @@ func (self *CPU) skipIfKeyNot(vx byte) {
 	}
 
 	//fmt.Printf("New PC: %d\tKey: %d\tNot Pressed: %t\n", self.PC, self.V[vx], self.Key[self.V[vx]])
+	self.PC += 2
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
 // The value of DT is placed into Vx.
 func (self *CPU) loadXDT(vx byte) {
-	//fmt.Println("Instruction Fx07: Set Vx = delay timer value.")
+	fmt.Println("Instruction Fx07: Set Vx = delay timer value.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	self.V[vx] = self.DT
 	//fmt.Printf("New V%X: %X", vx, self.V[vx])
+	self.PC += 2
 }
 
 // Instruction Fx0A: Wait for a key press, store the value of the key in Vx.
 // All execution stops until a key is pressed, then the value of that key is stored in Vx.
 func (self *CPU) loadKey(vx byte) {
-	//fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
+	fmt.Println("Instruction Fx0A: Wait for a key press, store the value of the key in Vx.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	wait := true
@@ -735,58 +762,63 @@ func (self *CPU) loadKey(vx byte) {
 	}
 
 	fmt.Println("I AM OUT")
+	self.PC += 2
 }
 
 // Instruction Fx15: Set delay timer = Vx.
 // DT is set equal to the value of Vx.
 func (self *CPU) loadDTX(vx byte) {
-	//fmt.Println("Instruction Fx15: Set delay timer = Vx.")
+	fmt.Println("Instruction Fx15: Set delay timer = Vx.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	self.DT = self.V[vx]
 
 	//fmt.Printf("New DT: %d", self.DT)
+	self.PC += 2
 }
 
 // Instruction Fx18: Set sound timer = Vx.
 // ST is set equal to the value of Vx.
 func (self *CPU) loadSTX(vx byte) {
-	//fmt.Println("Instruction Fx18: Set sounder timer = Vx.")
+	fmt.Println("Instruction Fx18: Set sounder timer = Vx.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	self.ST = self.V[vx]
 
 	//fmt.Printf("New ST: %d", self.ST)
+	self.PC += 2
 }
 
 // Instruction Fx1E: Set I = I + Vx.
 // The values of I and Vx are added, and the results are stored in I.
 func (self *CPU) addIX(vx byte) {
-	//fmt.Println("Instruction Fx1E : Set I = I + Vx.")
+	fmt.Println("Instruction Fx1E : Set I = I + Vx.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	self.I = self.I + uint(self.V[vx])
 
 	//fmt.Printf("New I: %X", self.I)
+	self.PC += 2
 }
 
 // Instruction Fx29: Set I = location of sprite for digit Vx.
 // The value of I is set to the location for the hexadecimal sprite corresponding
 // to the value of Vx. See section 2.4, Display, for more information on the Chip-8 hexadecimal font.
 func (self *CPU) loadIX(vx byte) {
-	//fmt.Println("Instruction Fx29: Set I = location of sprite for digit Vx.")
+	fmt.Println("Instruction Fx29: Set I = location of sprite for digit Vx.")
 	//fmt.Printf("V%X: %X\tI: %X\n", vx, self.V[vx], self.I)
 
 	self.I = uint(self.V[vx]) * 5
 
 	//fmt.Printf("New I: %X\n\n", self.I)
+	self.PC += 2
 }
 
 // Instruction Fx33: Store BCD representation of Vx in memory locations I, I+1, and I+2.
 // The CPU takes the decimal value of Vx, and places the hundreds digit in memory
 // at location in I, the tens digit at location I+1, and the ones digit at location I+2.
 func (self *CPU) loadBCD(vx byte) {
-	//fmt.Println("Instruction Fx33: Store BCD represention of Vx in memory locations I, I+1, I+2.")
+	fmt.Println("Instruction Fx33: Store BCD represention of Vx in memory locations I, I+1, I+2.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	dec := self.V[vx]
@@ -797,13 +829,14 @@ func (self *CPU) loadBCD(vx byte) {
 	}
 
 	//fmt.Printf("Num: %d\tI: %d\tI+1: %d\tI+2: %d\n", self.V[vx], self.RAM[self.I], self.RAM[self.I+1], self.RAM[self.I+2])
+	self.PC += 2
 }
 
 // Instruction Fx55: Store registers V0 through Vx in memory starting at location I.
 // The CPU copies the values of registers V0 through Vx into memory,
 // starting at the address in I.
 func (self *CPU) saveV(vx byte) {
-	//fmt.Println("Instruction Fx55: Store registers V0 through Vx in memory starting at location I.")
+	fmt.Println("Instruction Fx55: Store registers V0 through Vx in memory starting at location I.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	for i := uint(0); i <= uint(vx); i++ {
@@ -815,12 +848,13 @@ func (self *CPU) saveV(vx byte) {
 		//fmt.Printf("I+%d: %X", i, self.RAM[self.I+i])
 	//}
 	//fmt.Println()
+	self.PC += 2
 }
 
 // Instruction Fx65: Read registers V0 through Vx from memory starting at location I.
 // The CPU reads values from memory starting at location I into registers V0 through Vx.
 func (self *CPU) loadV(vx byte) {
-	//fmt.Println("Instruction Fx65: Read registers V0 through Vx in memory starting at location I.")
+	fmt.Println("Instruction Fx65: Read registers V0 through Vx in memory starting at location I.")
 	//fmt.Printf("Vx: %X\n", vx)
 
 	for i := uint(0); i <= uint(vx); i++ {
@@ -832,4 +866,5 @@ func (self *CPU) loadV(vx byte) {
 	//	fmt.Printf("V%X: %x\t", i, self.V[i])
 	//}
 	//fmt.Println()
+	self.PC += 2
 }
