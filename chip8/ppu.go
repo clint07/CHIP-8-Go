@@ -16,8 +16,8 @@ const (
 	width  = 640
 )
 
-func (self *PPU) Init() error {
-	self.keypad = map[sdl.Scancode]byte {
+func (ppu *PPU) Init() error {
+	ppu.keypad = map[sdl.Scancode]byte {
 		sdl.SCANCODE_1: 0x1,
 		sdl.SCANCODE_2: 0x2,
 		sdl.SCANCODE_3: 0x3,
@@ -39,62 +39,60 @@ func (self *PPU) Init() error {
 
 	err = sdl.Init(sdl.INIT_VIDEO)
 
-	if self.window, err = sdl.CreateWindow(title, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN); err != nil {
+	if ppu.window, err = sdl.CreateWindow(title, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN); err != nil {
 		return err
 	}
 
-	if self.renderer, err = sdl.CreateRenderer(self.window, 1, 0); err != nil {
+	if ppu.renderer, err = sdl.CreateRenderer(ppu.window, 1, 0); err != nil {
 		return err
 	}
 
-	self.renderer.SetScale(10, 10)
+	ppu.renderer.SetScale(10, 10)
 	rect := sdl.Rect{0, 0, width, height}
-	self.renderer.SetDrawColor(0, 0, 0, 1)
-	self.renderer.FillRect(&rect)
-	self.renderer.Present()
+	ppu.renderer.SetDrawColor(0, 0, 0, 1)
+	ppu.renderer.FillRect(&rect)
+	ppu.renderer.Present()
 	return nil
 }
 
-func (self *PPU) destroy() {
-	self.renderer.Destroy()
-	self.window.Destroy()
+func (ppu *PPU) destroy() {
+	ppu.renderer.Destroy()
+	ppu.window.Destroy()
 	sdl.Quit()
 }
 
-func (self *PPU) Draw(gfx *[32][64]byte) {
+func (ppu *PPU) Draw(gfx *[32][64]byte) {
 	for i := 0; i < 32; i++ {
 		for j := 0; j < 64; j++ {
 			pixel := gfx[i][j]
 
 			if pixel == 0 {
-				self.renderer.SetDrawColor(0, 0, 0, 1)
+				ppu.renderer.SetDrawColor(0, 0, 0, 1)
 			} else {
-				self.renderer.SetDrawColor(255, 255, 255, 1)
+				ppu.renderer.SetDrawColor(255, 255, 255, 1)
 			}
 
-			self.renderer.DrawPoint(j, i)
+			ppu.renderer.DrawPoint(j, i)
 		}
 	}
 
-	self.renderer.Present()
+	ppu.renderer.Present()
 }
 
-func (self *PPU) Poll(key *[16]byte) bool {
+func (ppu *PPU) Poll(key *[16]bool) bool {
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch eventType := event.(type) {
 		case *sdl.QuitEvent:
 			return true
 
 		case *sdl.KeyUpEvent:
-			if unpressed, ok := self.keypad[eventType.Keysym.Scancode]; ok {
-				//fmt.Printf("Unpressed %X\n", unpressed)
-				key[unpressed] = 0
+			if unpressed, ok := ppu.keypad[eventType.Keysym.Scancode]; ok {
+				key[unpressed] = false
 			}
 
 		case *sdl.KeyDownEvent:
-			if pressed, ok := self.keypad[eventType.Keysym.Scancode]; ok {
-				//fmt.Printf("Pressed %X\n", pressed)
-				key[pressed] = 1
+			if pressed, ok := ppu.keypad[eventType.Keysym.Scancode]; ok {
+				key[pressed] = true
 			}
 		}
 

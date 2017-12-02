@@ -8,32 +8,32 @@ type Chip8 struct {
 	apu *APU
 }
 
-func (self *Chip8) Init() {
+func (chip8 *Chip8) Init() {
 	// Initialize CPU
-	self.cpu = &CPU{}
-	self.cpu.Init()
+	chip8.cpu = &CPU{}
+	chip8.cpu.Init()
 
 	// Create PPU
-	self.ppu = &PPU{}
-	self.ppu.Init()
+	chip8.ppu = &PPU{}
+	chip8.ppu.Init()
 
 	// Create APU
-	self.apu = &APU{}
-	self.apu.Init()
+	chip8.apu = &APU{}
+	chip8.apu.Init()
 }
 
-func (self *Chip8) Load(filename *string) error {
-	if err := self.cpu.LoadROM(filename); err != nil {
+func (chip8 *Chip8) Load(filename *string) error {
+	if err := chip8.cpu.LoadROM(filename); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (self *Chip8) Run() {
+func (chip8 *Chip8) Run() {
 	// Print ROM for sanity sake
-	self.cpu.printRAM()
-	tick := time.Tick(5 * time.Millisecond)
+	chip8.cpu.printRAM()
+	tick := time.Tick(16 * time.Millisecond)
 
 	// Run ROM
 	for {
@@ -41,19 +41,19 @@ func (self *Chip8) Run() {
 			case <- tick:
 
 			// Emulate a cycle
-			self.cpu.Cycle()
+			chip8.cpu.Cycle()
 
 			// Check draw flag
-			if self.cpu.DF {
+			if chip8.cpu.DF {
 				// Draw
-				self.ppu.Draw(&self.cpu.GFX)
+				chip8.ppu.Draw(&chip8.cpu.GFX)
 
 				// Don't forget to set the draw flag back
-				self.cpu.DF = false
+				chip8.cpu.DF = false
 			}
 
 			// Check keyboard input
-			if exit := self.ppu.Poll(&self.cpu.Key); exit {
+			if exit := chip8.ppu.Poll(&chip8.cpu.Key); exit {
 				break
 			}
 		}
@@ -61,6 +61,6 @@ func (self *Chip8) Run() {
 }
 
 
-func (self *Chip8) Shutdown() {
-	self.ppu.destroy()
+func (chip8 *Chip8) Shutdown() {
+	chip8.ppu.destroy()
 }
