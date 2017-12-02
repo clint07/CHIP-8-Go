@@ -138,7 +138,7 @@ func (cpu *CPU) getOpCode(PC uint16) uint16 {
 	return opCode
 }
 
-func (cpu *CPU) Cycle() {
+func (cpu *CPU) Cycle() error {
 	// Debug
 	//cpu.printRegisters()
 	if cpu.PC < 4094 {
@@ -146,7 +146,9 @@ func (cpu *CPU) Cycle() {
 		opCode := cpu.getOpCode(cpu.PC)
 
 		// Execute code
-		cpu.execute(opCode)
+		if err := cpu.execute(opCode); err != nil {
+			return err
+		}
 
 		// Increment PC and decrement DT & ST
 
@@ -158,6 +160,8 @@ func (cpu *CPU) Cycle() {
 			cpu.ST -= 1
 		}
 	}
+
+	return nil
 }
 
 func (cpu *CPU) execute(opCode uint16) error {
@@ -178,11 +182,11 @@ func (cpu *CPU) execute(opCode uint16) error {
 
 	} else if (opCode & 0xF000) == 0x1000 {
 		// Instruction 1nnn: Jump to location nnn.
-		cpu.jump(nnn)
+		return cpu.jump(nnn)
 
 	} else if (opCode & 0xF000) == 0x2000 {
 		// Instruction 2nnn: Call subroutine at nnn.
-		cpu.call(nnn)
+		return cpu.call(nnn)
 
 	} else if (opCode & 0xF000) == 0x3000 {
 		// Instruction 3xkk: Skip next instruction if Vx = kk.
@@ -260,7 +264,7 @@ func (cpu *CPU) execute(opCode uint16) error {
 	} else if (opCode & 0xF000) == 0xD000 {
 		// Instruction Dxyn: Display nbyte sprite starting at memory
 		// location I at (Vx, Vy), set Vf = collusion.
-		cpu.draw(vx, vy, n)
+		return cpu.draw(vx, vy, n)
 
 	} else if (opCode & 0xF0FF) == 0xE09E {
 		// Instruction Ex9E: Skip instruction if key with the value of Vx is pressed.
@@ -307,7 +311,7 @@ func (cpu *CPU) execute(opCode uint16) error {
 		cpu.loadV(vx)
 
 	} else {
-		fmt.Errorf("Unknown instruction: %X\n", opCode)
+		return fmt.Errorf("Unknown instruction: %X\n", opCode)
 	}
 
 	return nil
@@ -323,6 +327,7 @@ func (cpu *CPU) clear() {
 	// Set draw flag
 	cpu.DF = true
 
+	// Increment PC counter
 	cpu.PC += 2
 }
 
@@ -334,24 +339,28 @@ func (cpu *CPU) ret() error {
 
 	// Decrement stack pointer and error if it's below 0.
 	if cpu.SP -= 1; cpu.SP < 0 {
-		fmt.Printf("stack pointer out of bounds: %d", cpu.SP)
+		return fmt.Errorf("stack pointer out of bound: %d", cpu.SP)
 	}
 
 	cpu.PC = cpu.Stack[cpu.SP]
 	cpu.PC += 2
-	//fmt.Printf("New PC: %d", cpu.PC)
+
 	return nil
 }
 
 // Instruction 1nnn: Jump to location nnn.
 // The CPU sets the program counter to nnn.
-func (cpu *CPU) jump(nnn uint16) {
+func (cpu *CPU) jump(nnn uint16) error {
 	fmt.Println("Instruction 1nnn: Jump to location nnn.")
 	//fmt.Printf("nnn: %d\n", nnn)
 
-	cpu.PC = nnn
+	// Set PC to nnn. Error if it accesses invalid memory.
+	if cpu.PC = nnn; cpu.PC > 4028 {
+		return fmt.Errorf("jump: program counter out of bound: %d", nnn)
+	}
 
 	//fmt.Printf("New PC: %d\n", cpu.PC)
+	return nil
 }
 
 // Instruction 2nnn: Call subroutine at nnn.
@@ -362,11 +371,15 @@ func (cpu *CPU) call(nnn uint16) error {
 	//fmt.Printf("nnn: %d\n", nnn)
 
 	cpu.Stack[cpu.SP] = cpu.PC
-	cpu.PC = nnn
+
+	// Set PC to nnn. Error if it accesses invalid memory.
+	if cpu.PC = nnn; cpu.PC > 4028 {
+		return fmt.Errorf("call: program counter out of bound: %d", nnn)
+	}
 
 	// Increment stack pointer and error if it's above it's length
 	if cpu.SP += 1; cpu.SP > uint16(len(cpu.Stack)) {
-		fmt.Printf("stack pointer out of points: %d", cpu.SP)
+		return fmt.Errorf("call: stack pointer out of bound: %d", cpu.SP)
 	}
 
 	//fmt.Printf("New Stack: %v\nnew SP: %d\tPC: %d\n", cpu.Stack, cpu.SP, cpu.PC)
@@ -462,7 +475,7 @@ func (cpu *CPU) orXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy1: Set Vx = Vx | Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
-	cpu.V[vx] = cpu.V[vx] | cpu.V[vy]
+	cpu.V[vx] |= cpu.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 	cpu.PC += 2
@@ -476,7 +489,7 @@ func (cpu *CPU) andXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy2: Set Vx = Vx & Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
-	cpu.V[vx] = cpu.V[vx] & cpu.V[vy]
+	cpu.V[vx] &= cpu.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 	cpu.PC += 2
@@ -491,7 +504,7 @@ func (cpu *CPU) xorXY(vx byte, vy byte) {
 	fmt.Println("Instruction 8xy3: Set Vx = Vx ^ Vy.")
 	//fmt.Printf("Vx: %X\tVy: %X\n", vx, vy)
 
-	cpu.V[vx] = cpu.V[vx] ^ cpu.V[vy]
+	cpu.V[vx] ^= cpu.V[vy]
 
 	//fmt.Printf("New V%X: %X", vx, cpu.V[vx])
 	cpu.PC += 2
@@ -546,7 +559,7 @@ func (cpu *CPU) shiftRight(vx byte) {
 
 	cpu.V[0xF] = cpu.V[vx] & 0x1
 
-	// Another way to divide by 2
+	// Divide by 2
 	cpu.V[vx] = cpu.V[vx] >> 1
 
 	//fmt.Printf("New V%X: %X\tVF: %X", vx, cpu.V[vx], cpu.V[0xF])
@@ -607,7 +620,7 @@ func (cpu *CPU) skipIfNotXY(vx byte, vy byte) {
 // Instruction Annn: Set I = nnn.
 // The value of register I is set to nnn.
 func (cpu *CPU) loadI(nnn uint16) {
-	fmt.Println("Instruction Annn: Set I = nnnn.")
+	fmt.Println("Instruction Annn: Set I = nnn.")
 	//fmt.Printf("nnn: %X\n", nnn)
 
 	cpu.I = uint(nnn)
@@ -652,7 +665,7 @@ func (cpu *CPU) rand(vx byte, kk byte) {
 // is outside the coordinates of the display, it wraps around to the opposite side of the screen.
 // See instruction 8xy3 for more information on XOR, and section 2.4, Display,
 // for more information on the Chip-8 screen and sprites.
-func (cpu *CPU) draw(vx byte, vy byte, n byte) {
+func (cpu *CPU) draw(vx byte, vy byte, n byte) error {
 	fmt.Println("Instruction Dxyn: Display nbyte sprite starting at memory location I at (Vx, Vy), set Vf = collusion.")
 	//fmt.Printf("Vx: %X\tVy: %X\tn: %X\n", vx, vy, n)
 
@@ -661,12 +674,19 @@ func (cpu *CPU) draw(vx byte, vy byte, n byte) {
 
 	fmt.Printf("Coordinates: (%d, %d)\n", x, y)
 	for i := uint(0); i < uint(n); i++ {
+		if (y + byte(i)) > 32 {
+			return fmt.Errorf("draw: Y out of bounds: %d", y+byte(i))
+		}
+
 		value := cpu.RAM[cpu.I+i]
 
 		for j := uint(0); j < 8; j++ {
 			//fmt.Printf("%b", )
+			if (y + byte(i)) > 64 {
+				return fmt.Errorf("draw: X out of bounds: %d", x+byte(j))
+			}
 
-			if value&(0x80>>j) != 0 {
+			if (value & (0x80>>j)) != 0 {
 				//fmt.Printf("(%d,%d): %b\t", x+byte(j), y+byte(i), 1)
 				//fmt.Printf("%d", 1)
 				if cpu.GFX[y+byte(i)][x+byte(j)] == 1 {
@@ -694,6 +714,8 @@ func (cpu *CPU) draw(vx byte, vy byte, n byte) {
 	//fmt.Printf("%b\n", mem)
 	cpu.DF = true
 	cpu.PC += 2
+
+	return nil
 }
 
 // Instruction Ex9E: Skip next instruction if key with the value of Vx is pressed.
@@ -759,7 +781,6 @@ func (cpu *CPU) loadKey(vx byte) {
 		}
 	}
 
-	fmt.Println("I AM OUT")
 	cpu.PC += 2
 }
 

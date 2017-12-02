@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/clint07/Go CHIP-8/chip8"
+	"github.com/clint07/CHIP-8/chip8"
 	"time"
 )
 

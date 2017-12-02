@@ -1,6 +1,10 @@
 package CHIP8
 
-import "time"
+import (
+	"time"
+	"fmt"
+	"os"
+)
 
 type Chip8 struct {
 	cpu *CPU
@@ -40,8 +44,10 @@ func (chip8 *Chip8) Run() {
 		select {
 			case <- tick:
 
-			// Emulate a cycle
-			chip8.cpu.Cycle()
+			// Emulate a cycle. Panic if error has occurred.
+			if err := chip8.cpu.Cycle(); err != nil {
+				panic(err)
+			}
 
 			// Check draw flag
 			if chip8.cpu.DF {
