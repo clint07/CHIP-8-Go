@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"github.com/clint07/CHIP-8/chip8"
-	"time"
+	"strconv"
 )
 
 func main() {
 	// Parse command line arguments
-	filename := flag.String("file", "", "ROM filename")
+	flagFilename := flag.String("file", "", "ROM filename")
+	flagFps := flag.String("fps", "120", "120 FPS recommended unless using ROMs such as a clock ROM")
 	flag.Parse()
 
 	// Initialize CHIP-8
@@ -16,13 +17,17 @@ func main() {
 	chip8.Init()
 
 	// Load ROM
-	if err := chip8.Load(filename); err != nil {
+	if err := chip8.Load(flagFilename); err != nil {
 		panic(err)
 	}
 
 	// Run ROM
-	chip8.Run()
-	time.Sleep(5 * time.Second)
+	fps, err := strconv.Atoi(*flagFps)
+	if err != nil {
+		panic(err)
+	}
+
+	chip8.Run(fps)
 
 	// Shutdown CHIP-8
 	chip8.Shutdown()

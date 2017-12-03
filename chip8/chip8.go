@@ -2,8 +2,6 @@ package CHIP8
 
 import (
 	"time"
-	"fmt"
-	"os"
 )
 
 type Chip8 struct {
@@ -17,11 +15,11 @@ func (chip8 *Chip8) Init() {
 	chip8.cpu = &CPU{}
 	chip8.cpu.Init()
 
-	// Create PPU
+	// Initialize PPU
 	chip8.ppu = &PPU{}
 	chip8.ppu.Init()
 
-	// Create APU
+	// Initialize APU
 	chip8.apu = &APU{}
 	chip8.apu.Init()
 }
@@ -34,10 +32,11 @@ func (chip8 *Chip8) Load(filename *string) error {
 	return nil
 }
 
-func (chip8 *Chip8) Run() {
+func (chip8 *Chip8) Run(fps int) {
 	// Print ROM for sanity sake
 	chip8.cpu.printRAM()
-	tick := time.Tick(16 * time.Millisecond)
+
+	tick := time.Tick(time.Second / time.Duration(fps))
 
 	// Run ROM
 	for {

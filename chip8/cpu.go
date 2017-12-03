@@ -95,7 +95,7 @@ func (cpu *CPU) LoadROM(filename *string) error {
 // Helpful for debugging
 func (cpu *CPU) printRAM() {
 	for i := 0; i < cpu.RS+512; i++ {
-		if i%10 == 0 {
+		if (i % 10) == 0 {
 			fmt.Printf("\n%d: %X", i, cpu.RAM[i])
 		} else if cpu.RAM[i]&0xF0 == 0 {
 			fmt.Printf("\t\t%d: 0%X", i, cpu.RAM[i])
@@ -311,7 +311,7 @@ func (cpu *CPU) execute(opCode uint16) error {
 		cpu.loadV(vx)
 
 	} else {
-		return fmt.Errorf("Unknown instruction: %X\n", opCode)
+		fmt.Printf("Unknown instruction: %X\n", opCode)
 	}
 
 	return nil
