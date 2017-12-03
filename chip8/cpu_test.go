@@ -5,67 +5,148 @@ import (
 )
 
 // Instruction 00E0: Clear the display.
-func (cpu *CPU) TestClear() {
+func TestClear(t *testing.T) {
 
 }
+
+// TODO test PC, SP, sound and delay timer
 
 // Instruction 00EE: Return from a subroutine.
 // The CPU sets the program counter to the address at the top of the stack,
 // then subtracts 1 from the stack pointer.
 func TestRet(t *testing.T) {
+	cpu := &CPU{}
+	cpu.PC = 0xFF
+	cpu.Stack[cpu.SP] = 512
+	cpu.SP += 1
+
+	cpu.ret()
+
+	if cpu.PC != 514 {
+		t.Errorf("TestRet: failed to pop the stack and set PC to it. Expected: %d Received: %d", 514, cpu.PC)
+	}
+
+	if cpu.SP != 0 {
+		t.Errorf("TestRet: failed to decrement SP after popping the stack. Expected: %d Received: %d", 0, cpu.SP)
+	}
 
 }
 
 // Instruction 1nnn: Jump to location nnn.
 // The CPU sets the program counter to nnn.
 func TestJump(t *testing.T) {
+	cpu := &CPU{}
+	cpu.jump(512)
 
+	if cpu.PC != 512 {
+		t.Errorf("TestJump: failed to jump to instruction. Expected: %d Received: %d", 512, cpu.PC)
+	}
 }
 
 // Instruction 2nnn: Call subroutine at nnn.
 // The CPU increments the stack pointer, then puts the current PC on the top of the stack.
 // The PC is then set to nnn.
 func TestCall(t *testing.T) {
+	cpu := &CPU{}
+	cpu.PC = 512
 
+	cpu.call(777)
+
+	if cpu.SP != 1 {
+		t.Errorf("TestCall: failed to increment SP. Expected: %d Received: %d", 1, cpu.SP)
+	}
+
+	if cpu.Stack[0] != 512 {
+		t.Errorf("TestCall: failed to placed PC on the stack. Expected %d Received: %d", 512, cpu.Stack[0])
+	}
+
+	if cpu.PC != 777 {
+		t.Errorf("TestCall: failed to jump to instruction. Expected: %d Received: %d", 777, cpu.PC)
+	}
 }
 
 // Instruction 3xkk: Skip next instruction if Vx = kk.
 // The CPU compares register Vx to kk, and if they are equal,
 // increments the program counter by 2.
 func TestSkipIf(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 7
 
+	if cpu.skipIf(0x0, 7); cpu.PC != 4 {
+		t.Errorf("TestSkipIf: failed to skip.")
+	}
+
+	if cpu.skipIf(0x0, 9); cpu.PC != 6 {
+		t.Errorf("TestSkipIf: skipped by error")
+	}
 }
 
 // Instruction 4xkk: Skip next instruction if Vx != kk.
 // The CPU compares register Vx to kk, and if they are not equal,
 // increments the program counter by 2.
 func TestSkipIfNot(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 7
 
+	if cpu.skipIf(0x0, 9); cpu.PC == 4 {
+		t.Errorf("TestSkipIf: failed to skip")
+	}
+
+	if cpu.skipIf(0x0, 7); cpu.PC != 6 {
+		t.Errorf("TestSkipIf: skipped by error.")
+	}
 }
 
 // Instruction 5xy0: Skip next instruction if Vx = Vy.
 // The CPU compares register Vx to register Vy, and if they are equal,
 // increments the program counter by 2.
 func TestSkipIfXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 7
+	cpu.V[0xF] = 7
 
+	if cpu.skipIfXY(0x0, 0xF); cpu.PC != 4 {
+		t.Errorf("TestSkipIf: failed to skip")
+	}
+
+	if cpu.skipIfXY(0x0, 0xE); cpu.PC != 6 {
+		t.Errorf("TestSkipIf: skipped by error.")
+	}
 }
 
 // Instruction 6xkk: Set Vx = kk.
 // The CPU puts the value kk into register Vx.
 func TestLoad(t *testing.T) {
+	cpu := &CPU{}
+
+	if cpu.load(0x0, 7); cpu.V[0x0] != 7 {
+		t.Errorf("TestLoad: failed to load %d into V%X", 7, 0x0)
+	}
+
 
 }
 
 // Instruction 7xkk: Set Vx = Vx + kk.
 // Adds the value kk to the value of register Vx, then stores the result in Vx.
 func TestAdd(t *testing.T) {
+	cpu := &CPU{}
 
+	cpu.V[0x0] = 7
+
+	if cpu.add(0x0, 7); cpu.V[0x0] != 14 {
+		t.Errorf("TestAdd: failed to add %d to V%X. Expected: %d Result: %d", 7, 0x0, 14, cpu.V[0x0])
+	}
 }
 
 // Instruction 8xy0: Set Vx = Vy.
 // Stores the value of register Vy in register Vx.
 func TestLoadXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0xF] = 7
 
+	if cpu.loadXY(0x0, 0xF); cpu.V[0x0] != 7 {
+		t.Errorf("TestLoadXY: failed to store value in V%X to V%X. Expected: %d Result %d", 0xF, 0x0, 7, cpu.V[0x0])
+	}
 }
 
 // Instruction 8xy1: Set Vx = Vx OR Vy.
@@ -73,6 +154,17 @@ func TestLoadXY(t *testing.T) {
 // A bitwise OR compares the corresponding bits from two values, and if either bit is 1,
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func TestOrXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 9
+	cpu.V[0xF] = 7
+
+	if cpu.orXY(0x0, 0xF); cpu.V[0x0] != 31 {
+		t.Errorf("TestOrXY: failed to Or V%X and V%X. Expected: %d Result: %d", 0x0, 0xF, 31, cpu.V[0x0])
+	}
+
+	if cpu.V[0xF] != 7 {
+		t.Errorf("TestOrXY: operated on the wrong register")
+	}
 }
 
 // Instruction 8xy2: Set Vx = Vx AND Vy.

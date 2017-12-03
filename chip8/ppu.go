@@ -36,7 +36,6 @@ func (ppu *PPU) Init() error {
 		sdl.SCANCODE_V: 0xF}
 
 	var err error
-
 	err = sdl.Init(sdl.INIT_VIDEO)
 
 	if ppu.window, err = sdl.CreateWindow(title, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN); err != nil {
@@ -48,10 +47,12 @@ func (ppu *PPU) Init() error {
 	}
 
 	ppu.renderer.SetScale(10, 10)
+
 	rect := sdl.Rect{0, 0, width, height}
 	ppu.renderer.SetDrawColor(0, 0, 0, 1)
 	ppu.renderer.FillRect(&rect)
 	ppu.renderer.Present()
+
 	return nil
 }
 
