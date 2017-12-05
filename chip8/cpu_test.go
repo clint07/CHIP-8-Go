@@ -158,8 +158,8 @@ func TestOrXY(t *testing.T) {
 	cpu.V[0x0] = 9
 	cpu.V[0xF] = 7
 
-	if cpu.orXY(0x0, 0xF); cpu.V[0x0] != 31 {
-		t.Errorf("TestOrXY: failed to Or V%X and V%X. Expected: %d Result: %d", 0x0, 0xF, 31, cpu.V[0x0])
+	if cpu.orXY(0x0, 0xF); cpu.V[0x0] != 15 {
+		t.Errorf("TestOrXY: failed to Or V%X and V%X. Expected: %d Result: %d", 0x0, 0xF, 15, cpu.V[0x0])
 	}
 
 	if cpu.V[0xF] != 7 {
@@ -172,7 +172,17 @@ func TestOrXY(t *testing.T) {
 // A bitwise AND compares the corresponding bits from two values, and if both bits are 1,
 // then the same bit in the result is also 1. Otherwise, it is 0.
 func TestAndXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 9
+	cpu.V[0xF] = 7
 
+	if cpu.andXY(0x0, 0xF); cpu.V[0x0] != 1 {
+		t.Errorf("TestAndXY: failed to And V%X and V%x, Expected: %d Result: %d", 0x0, 0xF, 1, cpu.V[0x0])
+	}
+
+	if cpu.V[0xF] != 7 {
+		t.Errorf("TestAndXY: operated on the wrong register")
+	}
 }
 
 // Instruction 8xy3: Set Vx = Vx XOR Vy.
@@ -181,7 +191,17 @@ func TestAndXY(t *testing.T) {
 // and if the bits are not both the same, then the corresponding bit in the result is set to 1.
 // Otherwise, it is 0.
 func TestXorXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 9
+	cpu.V[0xF] = 7
 
+	if cpu.xorXY(0x0, 0xF); cpu.V[0x0] != 14 {
+		t.Errorf("TestXorXY: failed to Xor V%X and V%x, Expected: %d Result: %d", 0x0, 0xF, 14, cpu.V[0x0])
+	}
+
+	if cpu.V[0xF] != 7 {
+		t.Errorf("TestXOrXY: operated on the wrong register")
+	}
 }
 
 // Instruction 8xy4: Set Vx = Vx + Vy, set VF = carry.
