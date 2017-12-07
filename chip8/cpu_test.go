@@ -103,13 +103,13 @@ func TestSkipIfNot(t *testing.T) {
 func TestSkipIfXY(t *testing.T) {
 	cpu := &CPU{}
 	cpu.V[0x0] = 7
-	cpu.V[0xF] = 7
+	cpu.V[0xE] = 7
 
-	if cpu.skipIfXY(0x0, 0xF); cpu.PC != 4 {
+	if cpu.skipIfXY(0x0, 0xE); cpu.PC != 4 {
 		t.Errorf("TestSkipIf: failed to skip")
 	}
 
-	if cpu.skipIfXY(0x0, 0xE); cpu.PC != 6 {
+	if cpu.skipIfXY(0x0, 0xF); cpu.PC != 6 {
 		t.Errorf("TestSkipIf: skipped by error.")
 	}
 }
@@ -142,10 +142,10 @@ func TestAdd(t *testing.T) {
 // Stores the value of register Vy in register Vx.
 func TestLoadXY(t *testing.T) {
 	cpu := &CPU{}
-	cpu.V[0xF] = 7
+	cpu.V[0xE] = 7
 
-	if cpu.loadXY(0x0, 0xF); cpu.V[0x0] != 7 {
-		t.Errorf("TestLoadXY: failed to store value in V%X to V%X. Expected: %d Result %d", 0xF, 0x0, 7, cpu.V[0x0])
+	if cpu.loadXY(0x0, 0xE); cpu.V[0x0] != 7 {
+		t.Errorf("TestLoadXY: failed to store value in V%X to V%X. Expected: %d Result %d", 0xE, 0x0, 7, cpu.V[0x0])
 	}
 }
 
@@ -156,13 +156,13 @@ func TestLoadXY(t *testing.T) {
 func TestOrXY(t *testing.T) {
 	cpu := &CPU{}
 	cpu.V[0x0] = 9
-	cpu.V[0xF] = 7
+	cpu.V[0xE] = 7
 
-	if cpu.orXY(0x0, 0xF); cpu.V[0x0] != 15 {
-		t.Errorf("TestOrXY: failed to Or V%X and V%X. Expected: %d Result: %d", 0x0, 0xF, 15, cpu.V[0x0])
+	if cpu.orXY(0x0, 0xE); cpu.V[0x0] != 15 {
+		t.Errorf("TestOrXY: failed to Or V%X and V%X. Expected: %d Result: %d", 0x0, 0xE, 15, cpu.V[0x0])
 	}
 
-	if cpu.V[0xF] != 7 {
+	if cpu.V[0xE] != 7 {
 		t.Errorf("TestOrXY: operated on the wrong register")
 	}
 }
@@ -174,13 +174,13 @@ func TestOrXY(t *testing.T) {
 func TestAndXY(t *testing.T) {
 	cpu := &CPU{}
 	cpu.V[0x0] = 9
-	cpu.V[0xF] = 7
+	cpu.V[0xE] = 7
 
-	if cpu.andXY(0x0, 0xF); cpu.V[0x0] != 1 {
-		t.Errorf("TestAndXY: failed to And V%X and V%x, Expected: %d Result: %d", 0x0, 0xF, 1, cpu.V[0x0])
+	if cpu.andXY(0x0, 0xE); cpu.V[0x0] != 1 {
+		t.Errorf("TestAndXY: failed to And V%X and V%x, Expected: %d Result: %d", 0x0, 0xE, 1, cpu.V[0x0])
 	}
 
-	if cpu.V[0xF] != 7 {
+	if cpu.V[0xE] != 7 {
 		t.Errorf("TestAndXY: operated on the wrong register")
 	}
 }
@@ -193,13 +193,13 @@ func TestAndXY(t *testing.T) {
 func TestXorXY(t *testing.T) {
 	cpu := &CPU{}
 	cpu.V[0x0] = 9
-	cpu.V[0xF] = 7
+	cpu.V[0xE] = 7
 
-	if cpu.xorXY(0x0, 0xF); cpu.V[0x0] != 14 {
-		t.Errorf("TestXorXY: failed to Xor V%X and V%x, Expected: %d Result: %d", 0x0, 0xF, 14, cpu.V[0x0])
+	if cpu.xorXY(0x0, 0xE); cpu.V[0x0] != 14 {
+		t.Errorf("TestXorXY: failed to Xor V%X and V%x, Expected: %d Result: %d", 0x0, 0xE, 14, cpu.V[0x0])
 	}
 
-	if cpu.V[0xF] != 7 {
+	if cpu.V[0xE] != 7 {
 		t.Errorf("TestXOrXY: operated on the wrong register")
 	}
 }
@@ -208,6 +208,25 @@ func TestXorXY(t *testing.T) {
 // The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,)
 // VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
 func TestAddXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 9
+	cpu.V[0xE] = 7
+	cpu.V[0xF] = 0
+
+	if cpu.addXY(0x0, 0xE); cpu.V[0x0] != 16 {
+		t.Errorf("TestAddXY: failed to add V%X and V%X. Expected: %d Result: %d", 0x0, 0xE, 16, cpu.V[0x0])
+	} else if cpu.V[0xF] != 0 {
+		t.Errorf("TestAddXY: failed to set the VF flag correctly. Expected: %d Result: %d", 0, cpu.V[0xF])
+	}
+
+	if cpu.V[0xE] != 7 {
+		t.Errorf("TestAddXY: operated on the wrong register")
+	}
+
+	cpu.V[0xE] = 255
+	if cpu.addXY(0x0, 0xE); cpu.V[0xF] != 1 {
+		t.Errorf("TestAddXY: failed to set the VF flag correctly. Expected: %d Result: %d", 1, cpu.V[0xF])
+	}
 
 }
 
@@ -215,13 +234,38 @@ func TestAddXY(t *testing.T) {
 // If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
 // and the results stored in Vx.
 func TestSubXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 9
+	cpu.V[0xE] = 7
+	cpu.V[0xF] = 0
 
+	if cpu.subXY(0x0, 0xE); cpu.V[0x0] != 2 {
+		t.Errorf("TestSubXY: failed to subtract V%X and V%X. Expected: %d Result: %d", 0x0, 0xE, 2, cpu.V[0x0])
+	} else if cpu.V[0xF] != 1 {
+		t.Errorf("TestAddXY: failed to set the VF flag correctly. Expected: %d Result: %d", 1, cpu.V[0xF])
+	}
 }
 
 // Instruction 8xy6: Set Vx = Vx SHR 1.
 // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
 // Then Vx is divided by 2.
 func TestShiftRight(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 0x04
+
+	if cpu.shiftRight(0x0); cpu.V[0x0] != 2 {
+		t.Errorf("TestShiftRight: failed to shift right on V%X. Expected: %d Result: %d", 0x0, 2, cpu.V[0x0])
+	} else if cpu.V[0xF] != 0 {
+		t.Errorf("TestShiftRight: failed to set the VF flag correctly. Expected: %d Result: %d", 0, cpu.V[0xF])
+	}
+
+
+	cpu.V[0x0] = 0x5
+	if cpu.shiftRight(0x0); cpu.V[0x0] != 2 {
+		t.Errorf("TestShiftRight: failed to shift right on V%X. Expected: %d Result: %d", 0x0, 2, cpu.V[0x0])
+	} else if cpu.V[0xF] != 1 {
+		t.Errorf("TestShiftRight: failed to set the VF flag correctly. Expected: %d Result: %d", 1, cpu.V[0xF])
+	}
 
 }
 
@@ -229,13 +273,39 @@ func TestShiftRight(t *testing.T) {
 // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
 // and the results stored in Vx.
 func TestSubYX(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 7
+	cpu.V[0xE] = 9
 
+	if cpu.subYX(0x0, 0xE); cpu.V[0x0] != 2 {
+		t.Errorf("TestSubYX: failed to subtract V%X and V%X. Expected: %d Result: %d", 0x0, 0xE, 2, cpu.V[0x0])
+	} else if cpu.V[0xF] != 1 {
+		t.Errorf("TestsubYX: failed to set the VF flag correctly. Expected: %d Result %d", 1, cpu.V[0xF])
+	}
+
+
+	cpu.V[0x0] = 9
+	cpu.V[0xE] = 7
+
+	if cpu.subYX(0x0, 0xE); cpu.V[0x0] != 254 {
+		t.Errorf("TestSubYX: failed to subtract V%X and V%X. Expected: %d Result: %d", 0x0, 0xE, 254, cpu.V[0x0])
+	} else if cpu.V[0xF] != 0 {
+		t.Errorf("TestsubYX: failed to set the VF flag correctly. Expected: %d Result %d", 0, cpu.V[0xF])
+	}
 }
 
 // Instruction 8xyE: Set Vx = Vx SHL 1.
 // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
 // Then Vx is multiplied by 2.
 func TestShiftLeft(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 128
+
+	if cpu.shiftLeft(0x0); cpu.V[0x0] != 0 {
+		t.Errorf("TestShiftLeft: failed to shift left on V%X. Expected: %d Result: %d", 0x0, 0, cpu.V[0x0])
+	} else if cpu.V[0xF] != 1 {
+		t.Errorf("TestShiftLeft: failed to set the VF flag correctly. Expected: %d Result %d", 1, cpu.V[0xf])
+	}
 
 }
 
