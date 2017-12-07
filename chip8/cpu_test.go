@@ -313,6 +313,19 @@ func TestShiftLeft(t *testing.T) {
 // The values of Vx and Vy are compared, and if they are not equal,
 // the program counter is increased by 2.
 func TestSkipIfNotXY(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0X0] = 7
+	cpu.V[0xE] = 9
+
+	if cpu.skipIfNotXY(0x0, 0xE); cpu.PC != 4 {
+		t.Errorf("TestSkipIfNotXY: failed to skip instruction. Expected: %d Result %d", 4, cpu.PC)
+	}
+
+	cpu.V[0xE] = 7
+
+	if cpu.skipIfNotXY(0x0, 0xE); cpu.PC != 6 {
+		t.Errorf("TestSkipIfNotXY: failed to not skip instruction. Expected: %d Result %d", 6, cpu.PC)
+	}
 
 }
 
