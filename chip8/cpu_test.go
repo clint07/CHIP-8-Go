@@ -332,20 +332,16 @@ func TestSkipIfNotXY(t *testing.T) {
 // Instruction Annn: Set I = nnn.
 // The value of register I is set to nnn.
 func TestLoadI(t *testing.T) {
+	cpu := &CPU{}
 
+	if cpu.loadI(7); cpu.I != 7 {
+		t.Errorf("TestLoadI: failed to load nnn into I. Expected: %d Result %d", 7, cpu.I)
+	}
 }
 
 // Instruction Bnnn: Jump to location nnn + V0.
 // The program counter is set to nnn plus the value of V0.
 func TestJumpV0(t *testing.T) {
-
-}
-
-// Instruction Cxkk: Set Vx = random byte AND kk.
-// The CPU generates a random number from 0 to 255,
-// which is then ANDed with the value kk. The results are stored in Vx.
-// See instruction 8xy2 for more information on AND.
-func TestRand(t *testing.T) {
 
 }
 
