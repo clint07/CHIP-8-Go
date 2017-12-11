@@ -342,7 +342,12 @@ func TestLoadI(t *testing.T) {
 // Instruction Bnnn: Jump to location nnn + V0.
 // The program counter is set to nnn plus the value of V0.
 func TestJumpV0(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 6
 
+	if cpu.jumpV0(8); cpu.PC != 14 {
+		t.Errorf("TestJumpV0: failed to jump nnn times plus V0. Expected: %d Result %d", 14, cpu.PC)
+	}
 }
 
 // Instruction Dxyn: Display n-byte sprite starting at memory location I at (Vx, Vy),
@@ -363,38 +368,78 @@ func TestDraw(t *testing.T) {
 // Checks the keyboard, and if the key corresponding to the value of Vx is currently
 // in the down position, PC is increased by 2.
 func TestSkipIfKey(t *testing.T) {
+	cpu := &CPU{}
 
+	cpu.Key[0x0] = true
+	if cpu.skipIfKey(0x0); cpu.PC != 4 {
+		t.Errorf("TestSkipIfKey: failed to properly increment PC. Expected: %d Result: %d", 4, cpu.PC)
+	}
+
+	cpu.Key[0x0] = false
+	if cpu.skipIfKey(0x0); cpu.PC != 6 {
+		t.Errorf("TestSkipIfSky: failed to properly increment PC. Expected: %d Result: %d", 6, cpu.PC)
+	}
 }
 
 // Instruction ExA1: Skip next instruction if key with the value of Vx is not pressed.
 // Checks the keyboard, and if the key corresponding to the value of Vx is currently
 // in the up position, PC is increased by 2.
 func TestSkipIfKeyNot(t *testing.T) {
+	cpu := &CPU{}
 
+	cpu.Key[0x0] = false
+	if cpu.skipIfKeyNot(0x0); cpu.PC != 4 {
+		t.Errorf("TestSkipIfKeyNot: failed to properly increment PC. Expected: %d Result: %d", 4, cpu.PC)
+	}
+
+	cpu.Key[0x0] = true
+	if cpu.skipIfKeyNot(0x0); cpu.PC != 6 {
+		t.Errorf("TestSkipIfKeyNot: failed to properly increment PC. Expected: %d Result: %d", 6, cpu.PC)
+	}
 }
 
 // Instruction Fx07: Set Vx = delay timer value.
 // The value of DT is placed into Vx.
 func TestLoadXDT(t *testing.T) {
+	cpu := &CPU{}
+	cpu.DT = 7
 
+	if cpu.loadXDT(0xE); cpu.V[0xE] != 7 {
+		t.Errorf("TestLoadXDT: failed to load the delay timer into V%X. Expected: %d Result %d", 0xE, 7, cpu.V[0xE])
+	}
 }
 
 // Instruction Fx15: Set delay timer = Vx.
 // DT is set equal to the value of Vx.
 func TestLoadDTX(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0xE] = 7
 
+	if cpu.loadDTX(0xE); cpu.DT != 7 {
+		t.Errorf("TestLoadDTX: failed to load V%X into delay timer. Expected: %d  Result %d", 0xE, 7, cpu.DT)
+	}
 }
 
 // Instruction Fx18: Set sound timer = Vx.
 // ST is set equal to the value of Vx.
 func TestLoadSTX(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0xE] = 7
 
+	if cpu.loadSTX(0xE); cpu.ST != 7 {
+		t.Errorf("TestLoadSTC: failed to load V%X into sound timer. Expected: %d Result: %d", 0xE, 7, cpu.ST)
+	}
 }
 
 // Instruction Fx1E: Set I = I + Vx.
 // The values of I and Vx are added, and the results are stored in I.
 func TestAddIX(t *testing.T) {
+	cpu := &CPU{}
+	cpu.V[0x0] = 7
 
+	if cpu.addIX(0x0); cpu.I != 7 {
+		t.Errorf("TestAddIX: failed to add V%X and I. Expected: %d Result: %d", 0x0, 7, cpu.I)
+	}
 }
 
 // Instruction Fx29: Set I = location of sprite for digit Vx.
