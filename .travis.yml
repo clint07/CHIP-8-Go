@@ -4,4 +4,4 @@ go:
 
 install:
   - go get github.com/golang/dep/cmd/dep
-  - dep
+  - cd ./src/github.com/clint07/CHIP-8 && dep ensure
