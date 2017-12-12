@@ -1,3 +1,6 @@
+distro: trusty
+sudo: required
+
 language: go
 go:
   - master
