@@ -3,8 +3,8 @@ os: osx
 language: go
 
 install:
-  - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-  - brew install sdl2{,_image,_ttf,_mixer} pkg-config
+  # - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  # - brew install sdl2{,_image,_ttf,_mixer} pkg-config
   - go get github.com/golang/dep/cmd/dep
   - dep ensure
 
