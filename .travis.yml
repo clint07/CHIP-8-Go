@@ -1,12 +1,10 @@
-distro: trusty
-sudo: required
+os: osx
 
 language: go
-go:
-  - master
 
 install:
-  - sudo apt install libsdl2{,-mixer,-image,-ttf,-gfx}-dev
+  - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  - brew install sdl2{,_image,_ttf,_mixer} pkg-config
   - go get github.com/golang/dep/cmd/dep
   - dep ensure
 
