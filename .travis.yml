@@ -5,5 +5,7 @@ go:
 install:
   - go get github.com/golang/dep/cmd/dep
   - dep ensure
+  - ls
+  - ls ./chip8/
 
 script: go test -v ./chip8/
