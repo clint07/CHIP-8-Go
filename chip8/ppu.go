@@ -36,7 +36,7 @@ func (ppu *PPU) Init() error {
 		sdl.SCANCODE_V: 0xF}
 
 	var err error
-	err = sdl.Init(sdl.INIT_VIDEO)
+	err = sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO)
 
 	if ppu.window, err = sdl.CreateWindow(title, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN); err != nil {
 		return err

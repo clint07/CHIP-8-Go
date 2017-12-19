@@ -21,7 +21,6 @@ func (chip8 *Chip8) Init() {
 
 	// Initialize APU
 	chip8.apu = &APU{}
-	chip8.apu.Init()
 }
 
 func (chip8 *Chip8) Load(filename *string) error {
@@ -60,6 +59,10 @@ func (chip8 *Chip8) Run(fps int) {
 			// Check keyboard input
 			if exit := chip8.ppu.Poll(&chip8.cpu.Key); exit {
 				break
+			}
+
+			if chip8.cpu.ST > 0 {
+				chip8.apu.beep()
 			}
 		}
 	}
