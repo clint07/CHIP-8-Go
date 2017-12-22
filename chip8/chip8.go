@@ -40,6 +40,7 @@ func (chip8 *Chip8) Run(fps int) {
 	// Run ROM
 	for {
 		select {
+			// Routine that waits every `time.Second / time.Duration(fps)`
 			case <- tick:
 
 			// Emulate a cycle. Panic if error has occurred.
@@ -61,6 +62,7 @@ func (chip8 *Chip8) Run(fps int) {
 				break
 			}
 
+			// Emulate sound/beep
 			if chip8.cpu.ST > 0 {
 				chip8.apu.beep()
 			}
