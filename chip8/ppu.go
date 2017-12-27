@@ -10,6 +10,7 @@ type PPU struct {
 	keypad map[sdl.Scancode]byte
 }
 
+
 const (
 	title  = "CHIP-8"
 	height = 320
